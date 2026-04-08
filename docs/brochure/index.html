@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BitCoinTorrent</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fff; color: #111;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 3rem;
+    }
+    h1 {
+      font-size: 5rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.04em; line-height: 0.85;
+      max-height: 4.5rem; overflow: hidden;
+    }
+    .tag { font-size: 0.75rem; color: #999; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1rem; }
+    .links { margin-top: 2rem; display: flex; gap: 1rem; }
+    a {
+      background: #000; color: #fff; text-decoration: none;
+      padding: 0.6rem 1.5rem; font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    a:hover { background: #333; }
+    a.outline { background: none; color: #000; border: 1px solid #ddd; }
+    a.outline:hover { border-color: #000; }
+    .stats {
+      margin-top: 3rem; display: flex; gap: 2rem;
+      font-size: 0.65rem; color: #bbb; text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .stats span { color: #000; font-weight: 700; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>BITCOINTORRENT</h1>
+  <div class="tag">P2P video streaming with BSV micropayments</div>
+  <div class="links">
+    <a href="https://github.com/b0ase/BitCoinTorrent/releases">Download</a>
+    <a href="https://github.com/b0ase/BitCoinTorrent" class="outline">GitHub</a>
+    <a href="BitCoinTorrent-Report.html" class="outline">Technical Report</a>
+  </div>
+  <div class="stats">
+    <div><span>67</span> tests</div>
+    <div><span>$0.00003</span> per stream</div>
+    <div><span>2</span> on-chain TXs</div>
+    <div><span>60/40</span> creator/seeder</div>
+  </div>
+</body>
+</html>
