@@ -11,6 +11,7 @@
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
+import fastifyMultipart from '@fastify/multipart';
 import { PrivateKey, Transaction, P2PKH, SatoshisPerKilobyte } from '@bsv/sdk';
 import { SwarmManager } from '../swarm/swarm-manager.js';
 import type { ClientSwarmMessage, ServerSwarmMessage } from '../types/swarm.js';
@@ -46,6 +47,7 @@ export async function createServer(opts: ServerOptions) {
 
   await app.register(fastifyCors, { origin: true });
   await app.register(fastifyWebsocket);
+  await app.register(fastifyMultipart, { limits: { fileSize: 500 * 1024 * 1024 } }); // 500MB max
 
   // Serve index.html at root
   app.get('/', async (_request, reply) => {
@@ -112,6 +114,42 @@ export async function createServer(opts: ServerOptions) {
     return {
       infohash: content.infohash,
       magnetURI: content.torrent.magnetURI,
+      title,
+      totalPieces: result.manifest.totalPieces,
+      estimatedCost: estimateTotalCost(result.manifest),
+    };
+  });
+
+  /** POST /api/upload — Upload a video file from browser */
+  app.post('/api/upload', async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.status(400).send({ error: 'No file uploaded' });
+
+    // Save to data dir
+    const { pipeline } = await import('node:stream/promises');
+    const { createWriteStream } = await import('node:fs');
+    const safeName = file.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const savePath = join(opts.storagePath, safeName);
+    await pipeline(file.file, createWriteStream(savePath));
+
+    const title = safeName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+    // Ingest
+    const result = await ingest({
+      videoPath: savePath,
+      title,
+      creatorAddress: seeder.wallet.address,
+      satsPerPiece: opts.defaultSatsPerPiece,
+      outputDir: opts.storagePath,
+    });
+
+    const content = await seeder.seed(result.fmp4Path, result.manifest);
+    manifests.set(content.infohash, { ...result.manifest, infohash: content.infohash });
+    magnetURIs.set(content.infohash, content.torrent.magnetURI);
+    fmp4Paths.set(content.infohash, result.fmp4Path);
+
+    return {
+      infohash: content.infohash,
       title,
       totalPieces: result.manifest.totalPieces,
       estimatedCost: estimateTotalCost(result.manifest),

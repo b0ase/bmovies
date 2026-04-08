@@ -39,6 +39,7 @@
   "dependencies": {
     "@bsv/sdk": "^2.0.13",
     "@fastify/cors": "^11.2.0",
+    "@fastify/multipart": "^10.0.0",
     "@fastify/static": "^9.1.0",
     "@fastify/websocket": "^11.2.0",
     "bencode": "^4.0.0",
@@ -73,24 +74,48 @@
       "!node_modules/tsx/**"
     ],
     "extraResources": [
-      { "from": "src/client", "to": "client" }
+      {
+        "from": "src/client",
+        "to": "client"
+      }
     ],
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ],
       "category": "public.app-category.video",
       "icon": null
     },
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "linux": {
       "target": [
-        { "target": "AppImage", "arch": ["x64"] },
-        { "target": "deb", "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "category": "Video"
     },

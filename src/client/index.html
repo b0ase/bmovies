@@ -746,27 +746,48 @@
     }
 
     // ─── Add Content ────────────────────────────────
-    async function addContent() {
+    function addContent() {
       if (window.bitcointorrent?.addVideos) {
         // Electron: native file picker
-        await window.bitcointorrent.addVideos();
-        loadCatalog();
-      } else {
-        // Browser: prompt for a file path on the server
-        const path = prompt('Enter video file path on the server:\n(e.g. /videos/my-video.mp4)');
-        if (!path) return;
-        const title = path.split('/').pop().replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-        try {
-          const res = await fetch(`${API}/api/content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ videoPath: path, title, creatorAddress: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' }),
-          });
-          const data = await res.json();
-          if (data.error) alert(data.error);
-          else { alert(`Added: ${title} (${data.totalPieces} pieces)`); loadCatalog(); }
-        } catch (err) { alert('Error: ' + err.message); }
+        window.bitcointorrent.addVideos().then(() => loadCatalog());
+        return;
       }
+
+      // Browser: open file input dialog
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*,audio/*,.mp4,.mkv,.mov,.avi,.mp3,.m4a,.flac';
+      input.multiple = true;
+
+      input.onchange = async () => {
+        for (const file of input.files) {
+          const btn = document.getElementById('add-videos-btn');
+          btn.textContent = `Uploading ${file.name}...`;
+          btn.style.opacity = '0.5';
+
+          try {
+            const form = new FormData();
+            form.append('file', file);
+
+            const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
+            const data = await res.json();
+
+            if (data.error) {
+              alert(`Error: ${data.error}`);
+            } else {
+              console.log(`Uploaded: ${data.title} (${data.totalPieces} pieces)`);
+            }
+          } catch (err) {
+            alert(`Upload failed: ${err.message}`);
+          }
+        }
+
+        document.getElementById('add-videos-btn').textContent = '+ Add';
+        document.getElementById('add-videos-btn').style.opacity = '1';
+        loadCatalog();
+      };
+
+      input.click();
     }
 
     // ─── Tab Navigation ─────────────────────────────────
