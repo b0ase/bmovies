@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo 'This is an Electron desktop app, not a web app. See GitHub releases for downloads.'",
+  "outputDirectory": "docs/brochure"
+}
