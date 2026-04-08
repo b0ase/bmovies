@@ -1,0 +1,111 @@
+{
+  "name": "bitcointorrent",
+  "version": "0.1.0",
+  "description": "BitTorrent + BSV micropayments for streaming content delivery",
+  "type": "module",
+  "main": "electron/main.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/api/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "tsx scripts/seed.ts",
+    "play": "tsx scripts/play.ts",
+    "electron:preload": "cd electron && npx tsc -p tsconfig.json",
+    "electron:bundle": "npx esbuild electron/main.ts --bundle --platform=node --target=node22 --format=esm --outfile=electron/main.mjs --external:electron --external:bufferutil --external:utf-8-validate --external:utp-native --external:node-datachannel --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
+    "electron:dev": "pnpm electron:preload && pnpm electron:bundle && electron electron/main.mjs",
+    "electron:build": "pnpm electron:preload && pnpm electron:bundle && electron-builder",
+    "electron:build:mac": "pnpm electron:preload && pnpm electron:bundle && electron-builder --mac",
+    "electron:build:win": "pnpm electron:preload && pnpm electron:bundle && electron-builder --win",
+    "electron:build:linux": "pnpm electron:preload && pnpm electron:bundle && electron-builder --linux",
+    "electron:build:all": "pnpm electron:preload && pnpm electron:bundle && electron-builder --mac --win --linux"
+  },
+  "keywords": [
+    "bittorrent",
+    "bsv",
+    "micropayments",
+    "streaming",
+    "webtorrent"
+  ],
+  "author": {
+    "name": "b0ase",
+    "email": "hello@b0ase.com"
+  },
+  "homepage": "https://b0ase.com/bitcointorrent",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.0",
+  "dependencies": {
+    "@bsv/sdk": "^2.0.13",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/static": "^9.1.0",
+    "@fastify/websocket": "^11.2.0",
+    "bencode": "^4.0.0",
+    "create-torrent": "^6.1.0",
+    "dotenv": "^17.4.1",
+    "fastify": "^5.8.4",
+    "parse-torrent": "^11.0.19",
+    "webtorrent": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.3"
+  },
+  "build": {
+    "appId": "com.b0ase.bitcointorrent",
+    "productName": "BitCoinTorrent",
+    "files": [
+      "electron/main.mjs",
+      "electron/main.mjs.map",
+      "electron/preload.js",
+      "electron/preload.js.map",
+      "src/client/**/*",
+      "node_modules/**/*",
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder/**",
+      "!node_modules/vitest/**",
+      "!node_modules/@vitest/**",
+      "!node_modules/tsx/**"
+    ],
+    "extraResources": [
+      { "from": "src/client", "to": "client" }
+    ],
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "category": "public.app-category.video",
+      "icon": null
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ],
+      "category": "Video"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false
+    }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bufferutil",
+      "esbuild",
+      "electron",
+      "node-datachannel",
+      "utf-8-validate",
+      "utp-native"
+    ]
+  }
+}
