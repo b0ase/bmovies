@@ -26,10 +26,7 @@ const { values, positionals } = parseArgs({
   },
 });
 
-if (positionals.length === 0) {
-  console.error('Usage: npx tsx scripts/seed-multi.ts <video1> <video2> ... [--price 1]');
-  process.exit(1);
-}
+// No videos is OK — starts with empty catalog (add via Electron UI or API)
 
 const wif = process.env.BSV_PRIVATE_KEY ?? Wallet.random().privateKey.toWif();
 const leecherWif = process.env.BSV_LEECHER_KEY;

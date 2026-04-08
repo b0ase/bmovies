@@ -172,6 +172,58 @@
     #log .ok { color: #000; }
     #log .err { color: #c00; }
 
+    /* ─── Settings ─── */
+    #settings { display: none; }
+    #settings.on { display: block; }
+    #settings h2 {
+      font-size: 2.5rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.03em; color: #000; margin-bottom: 1.5rem;
+      max-height: 2.4rem; overflow: hidden;
+    }
+    .setting-group {
+      margin-bottom: 1.5rem; padding-bottom: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    .setting-group:last-child { border-bottom: none; }
+    .setting-label {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: #bbb; margin-bottom: 0.5rem;
+    }
+    .setting-value {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem;
+      color: #000; padding: 0.5rem 0.7rem; background: #fafafa;
+      border: 1px solid #eee; margin-bottom: 0.4rem;
+      word-break: break-all;
+    }
+    .setting-input {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem;
+      color: #000; padding: 0.5rem 0.7rem; background: #fff;
+      border: 1px solid #ddd; width: 100%; outline: none;
+    }
+    .setting-input:focus { border-color: #000; }
+    .setting-hint { font-size: 0.6rem; color: #bbb; margin-top: 0.2rem; }
+    .folder-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.4rem 0.7rem; background: #fafafa; border: 1px solid #eee;
+      margin-bottom: 0.3rem; font-size: 0.7rem;
+    }
+    .folder-item .path { color: #000; font-family: 'SF Mono', Monaco, monospace; font-size: 0.65rem; }
+    .btn {
+      background: #000; color: #fff; border: none; padding: 0.4rem 1rem;
+      font-family: inherit; font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+    }
+    .btn:hover { background: #333; }
+    .btn-outline {
+      background: none; color: #000; border: 1px solid #ddd;
+      padding: 0.3rem 0.7rem; font-family: inherit; font-size: 0.6rem;
+      cursor: pointer;
+    }
+    .btn-outline:hover { border-color: #000; }
+    .btn-sm { padding: 0.2rem 0.5rem; font-size: 0.55rem; }
+    .btn-danger { background: none; color: #c00; border: 1px solid #fcc; }
+    .btn-danger:hover { background: #fcc; }
+
     /* ─── Empty state ─── */
     .empty {
       padding: 5rem 0; text-align: center;
@@ -195,6 +247,7 @@
       <span class="addr" id="wallet-addr"></span>
       <span class="bal" id="wallet-bal"></span>
       <button id="add-videos-btn" onclick="window.bitcointorrent?.addVideos()">+ Add</button>
+      <button id="settings-btn" style="display:none" class="btn-outline" onclick="showSettings()">Settings</button>
     </div>
 
     <button id="back" onclick="showCatalog()">&larr; Back</button>
@@ -202,6 +255,55 @@
       <div class="empty">
         <h2>No content</h2>
         <p>Seed a video to get started.</p>
+      </div>
+    </div>
+
+    <div id="settings">
+      <button class="btn-outline" onclick="hideSettings()" style="margin-bottom:1.5rem">&larr; Back</button>
+      <h2>SETTINGS</h2>
+
+      <div class="setting-group">
+        <div class="setting-label">Wallet — Seeder (earns sats)</div>
+        <div class="setting-value" id="set-seeder-addr">—</div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
+          <button class="btn-sm btn-outline" onclick="regenWallet('seeder')">Regenerate</button>
+        </div>
+        <div class="setting-hint">This address earns sats when you serve content to other peers.</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">Wallet — Leecher (pays sats)</div>
+        <div class="setting-value" id="set-leecher-addr">—</div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
+          <button class="btn-sm btn-outline" onclick="regenWallet('leecher')">Regenerate</button>
+        </div>
+        <div class="setting-hint">This address pays for content you stream. Fund it with BSV.</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">Import Private Key (WIF)</div>
+        <input class="setting-input" id="set-import-wif" placeholder="Paste WIF key (K... or L...)" />
+        <div style="display:flex;gap:0.5rem;margin-top:0.4rem;">
+          <button class="btn-sm btn" onclick="importKey('seeder')">Set as Seeder</button>
+          <button class="btn-sm btn" onclick="importKey('leecher')">Set as Leecher</button>
+        </div>
+        <div class="setting-hint">Import an existing funded BSV wallet.</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">Content Folders</div>
+        <div id="set-folders"></div>
+        <button class="btn-sm btn-outline" onclick="addContentFolder()" style="margin-top:0.4rem">+ Add Folder</button>
+        <div class="setting-hint">Media files (.mp4, .mkv, .mp3, etc.) in these folders are automatically shared.</div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">Price per Piece</div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <input class="setting-input" id="set-price" type="number" min="1" value="1" style="width:100px" />
+          <span style="font-size:0.7rem;color:#999">satoshis per 256KB piece</span>
+          <button class="btn-sm btn" onclick="savePrice()">Save</button>
+        </div>
       </div>
     </div>
 
@@ -482,6 +584,93 @@
 
     if (window.bitcointorrent?.isElectron) {
       document.getElementById('add-videos-btn').style.display = '';
+      document.getElementById('settings-btn').style.display = '';
+    }
+
+    // ─── Settings ───────────────────────────────────────
+    async function showSettings() {
+      document.getElementById('catalog').style.display = 'none';
+      document.getElementById('settings').classList.add('on');
+
+      if (!window.bitcointorrent) return;
+      const cfg = await window.bitcointorrent.getConfig();
+      if (!cfg) return;
+
+      document.getElementById('set-seeder-addr').textContent = cfg.seederAddress;
+      document.getElementById('set-leecher-addr').textContent = cfg.leecherAddress;
+      document.getElementById('set-price').value = cfg.pricePerPiece;
+
+      renderFolders(cfg.contentFolders);
+    }
+
+    function hideSettings() {
+      document.getElementById('settings').classList.remove('on');
+      document.getElementById('catalog').style.display = '';
+      loadCatalog();
+    }
+
+    function renderFolders(folders) {
+      const el = document.getElementById('set-folders');
+      el.innerHTML = '';
+      for (const f of folders) {
+        const div = document.createElement('div');
+        div.className = 'folder-item';
+        div.innerHTML = `<span class="path">${f}</span><button class="btn-sm btn-danger" onclick="removeFolder('${f.replace(/'/g, "\\'")}')">Remove</button>`;
+        el.appendChild(div);
+      }
+      if (!folders.length) {
+        el.innerHTML = '<div style="color:#ccc;font-size:0.7rem;padding:0.5rem 0">No folders configured.</div>';
+      }
+    }
+
+    async function addContentFolder() {
+      if (!window.bitcointorrent) return;
+      const folder = await window.bitcointorrent.addFolder();
+      if (folder) {
+        const cfg = await window.bitcointorrent.getConfig();
+        renderFolders(cfg.contentFolders);
+      }
+    }
+
+    async function removeFolder(folder) {
+      if (!window.bitcointorrent) return;
+      await window.bitcointorrent.removeFolder(folder);
+      const cfg = await window.bitcointorrent.getConfig();
+      renderFolders(cfg.contentFolders);
+    }
+
+    async function regenWallet(which) {
+      if (!window.bitcointorrent) return;
+      if (!confirm(`Regenerate ${which} wallet? The old key will be lost.`)) return;
+      const result = await window.bitcointorrent.regenWallet(which);
+      if (result) {
+        document.getElementById(`set-${which}-addr`).textContent = result.address;
+        loadWallet();
+      }
+    }
+
+    async function importKey(which) {
+      if (!window.bitcointorrent) return;
+      const wif = document.getElementById('set-import-wif').value.trim();
+      if (!wif) return;
+      const settings = which === 'seeder' ? { seederWif: wif } : { leecherWif: wif };
+      const result = await window.bitcointorrent.saveSettings(settings);
+      if (result?.saved) {
+        document.getElementById('set-seeder-addr').textContent = result.seederAddress;
+        document.getElementById('set-leecher-addr').textContent = result.leecherAddress;
+        document.getElementById('set-import-wif').value = '';
+        loadWallet();
+        alert(`${which} wallet updated.`);
+      }
+    }
+
+    async function savePrice() {
+      if (!window.bitcointorrent) return;
+      const price = parseInt(document.getElementById('set-price').value);
+      if (price > 0) {
+        await window.bitcointorrent.saveSettings({ pricePerPiece: price });
+        alert(`Price set to ${price} sat/piece.`);
+      }
     }
   </script>
 </body>

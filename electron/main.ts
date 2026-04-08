@@ -25,7 +25,8 @@ const PORT = 8404;
 interface AppConfig {
   seederWif: string;
   leecherWif: string;
-  videoDir: string;
+  /** Folders to scan for content */
+  contentFolders: string[];
   pricePerPiece: number;
 }
 
@@ -162,7 +163,16 @@ async function addVideos() {
 
 // ─── IPC Handlers ───────────────────────────────────────
 function setupIPC() {
-  ipcMain.handle('get-config', () => config);
+  ipcMain.handle('get-config', () => {
+    if (!config) return null;
+    // Return config with addresses (never expose WIFs to renderer)
+    return {
+      seederAddress: new Wallet(config.seederWif).address,
+      leecherAddress: new Wallet(config.leecherWif).address,
+      contentFolders: config.contentFolders,
+      pricePerPiece: config.pricePerPiece,
+    };
+  });
   ipcMain.handle('get-status', () => server?.seeder?.getStatus());
   ipcMain.handle('get-wallet', async () => {
     if (!config) return null;
@@ -175,18 +185,76 @@ function setupIPC() {
     return { address: w.address, balance, live: !!config.leecherWif };
   });
   ipcMain.handle('add-videos', addVideos);
+
+  // Settings: update config
+  ipcMain.handle('save-settings', async (_event, settings: {
+    seederWif?: string;
+    leecherWif?: string;
+    contentFolders?: string[];
+    pricePerPiece?: number;
+  }) => {
+    if (!config) return { error: 'No config' };
+    if (settings.seederWif) config.seederWif = settings.seederWif;
+    if (settings.leecherWif) config.leecherWif = settings.leecherWif;
+    if (settings.contentFolders) config.contentFolders = settings.contentFolders;
+    if (settings.pricePerPiece !== undefined) config.pricePerPiece = settings.pricePerPiece;
+    await saveConfig(config);
+    return {
+      saved: true,
+      seederAddress: new Wallet(config.seederWif).address,
+      leecherAddress: new Wallet(config.leecherWif).address,
+    };
+  });
+
+  // Add a content folder
+  ipcMain.handle('add-folder', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+      title: 'Select content folder',
+    });
+    if (result.canceled || !result.filePaths.length || !config) return null;
+    const folder = result.filePaths[0];
+    if (!config.contentFolders.includes(folder)) {
+      config.contentFolders.push(folder);
+      await saveConfig(config);
+    }
+    return folder;
+  });
+
+  // Remove a content folder
+  ipcMain.handle('remove-folder', async (_event, folder: string) => {
+    if (!config) return;
+    config.contentFolders = config.contentFolders.filter(f => f !== folder);
+    await saveConfig(config);
+  });
+
+  // Regenerate wallet keypair
+  ipcMain.handle('regen-wallet', async (_event, which: 'seeder' | 'leecher') => {
+    if (!config) return null;
+    const w = Wallet.random();
+    if (which === 'seeder') config.seederWif = w.privateKey.toWif();
+    else config.leecherWif = w.privateKey.toWif();
+    await saveConfig(config);
+    return { address: w.address };
+  });
 }
 
 // ─── First Run Setup ────────────────────────────────────
 async function firstRunSetup(): Promise<AppConfig> {
-  // Generate fresh wallets
   const seederWallet = Wallet.random();
   const leecherWallet = Wallet.random();
+
+  // Default content folders: ~/Movies and ~/Music
+  const defaultFolders: string[] = [];
+  for (const name of ['Movies', 'Music']) {
+    const p = join(app.getPath('home'), name);
+    try { await access(p); defaultFolders.push(p); } catch {}
+  }
 
   const newConfig: AppConfig = {
     seederWif: seederWallet.privateKey.toWif(),
     leecherWif: leecherWallet.privateKey.toWif(),
-    videoDir: join(app.getPath('home'), 'Movies'),
+    contentFolders: defaultFolders,
     pricePerPiece: 1,
   };
 
@@ -195,6 +263,7 @@ async function firstRunSetup(): Promise<AppConfig> {
   console.log('[APP] First run — generated wallets:');
   console.log(`  Seeder:  ${seederWallet.address}`);
   console.log(`  Leecher: ${leecherWallet.address}`);
+  console.log(`  Content: ${defaultFolders.join(', ') || 'none'}`);
   console.log(`  Fund these addresses with BSV to enable live payments`);
 
   return newConfig;
@@ -202,12 +271,21 @@ async function firstRunSetup(): Promise<AppConfig> {
 
 // ─── Startup ────────────────────────────────────────────
 app.whenReady().then(async () => {
+  try {
   await mkdir(DATA_DIR, { recursive: true });
 
   // Load or create config
   config = await loadConfig();
   if (!config) {
     config = await firstRunSetup();
+  }
+  // Migrate old configs that had videoDir instead of contentFolders
+  if (!config.contentFolders) {
+    const old = (config as any).videoDir;
+    config.contentFolders = old ? [old] : [];
+    delete (config as any).videoDir;
+    await saveConfig(config);
+    console.log('[APP] Migrated config: videoDir → contentFolders');
   }
 
   // Start the server
@@ -223,36 +301,53 @@ app.whenReady().then(async () => {
 
   server = await createServer(opts);
 
-  // Auto-ingest videos from the configured video directory
-  try {
-    const files = await readdir(config.videoDir);
-    const mp4s = files.filter(f => f.endsWith('.mp4'));
-    for (const file of mp4s.slice(0, 10)) { // max 10 at startup
-      const videoPath = join(config.videoDir, file);
-      const title = file.replace(/\.mp4$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      try {
-        const result = await ingest({
-          videoPath,
-          title,
-          creatorAddress: new Wallet(config.seederWif).address,
-          satsPerPiece: config.pricePerPiece,
-          outputDir: DATA_DIR,
-        });
-        const seeded = await server.seeder.seed(result.fmp4Path, result.manifest);
-        server.manifests.set(seeded.infohash, { ...result.manifest, infohash: seeded.infohash });
-        server.magnetURIs.set(seeded.infohash, seeded.torrent.magnetURI);
-        server.fmp4Paths.set(seeded.infohash, result.fmp4Path);
-        console.log(`[APP] Auto-seeded: ${title}`);
-      } catch {}
-    }
-  } catch {}
-
+  // Start server + UI immediately, scan folders in background
   await server.start();
   console.log(`[APP] Server running on port ${PORT}`);
 
   setupIPC();
   createTray();
   createWindow();
+
+  // Scan content folders in background (non-blocking)
+  const MEDIA_EXTS = ['.mp4', '.mkv', '.mov', '.avi'];
+  (async () => {
+    let totalIngested = 0;
+    for (const folder of config!.contentFolders) {
+      try {
+        const files = await readdir(folder);
+        const media = files.filter(f => MEDIA_EXTS.some(ext => f.toLowerCase().endsWith(ext)));
+        console.log(`[APP] Scanning ${folder}: ${media.length} media file(s)`);
+
+        for (const file of media.slice(0, 10)) {
+          const videoPath = join(folder, file);
+          const title = file.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          try {
+            const result = await ingest({
+              videoPath,
+              title,
+              creatorAddress: new Wallet(config!.seederWif).address,
+              satsPerPiece: config!.pricePerPiece,
+              outputDir: DATA_DIR,
+            });
+            const seeded = await server!.seeder.seed(result.fmp4Path, result.manifest);
+            server!.manifests.set(seeded.infohash, { ...result.manifest, infohash: seeded.infohash });
+            server!.magnetURIs.set(seeded.infohash, seeded.torrent.magnetURI);
+            server!.fmp4Paths.set(seeded.infohash, result.fmp4Path);
+            totalIngested++;
+            console.log(`[APP] Seeding: ${title}`);
+          } catch {}
+        }
+      } catch {
+        console.log(`[APP] Skipped ${folder}`);
+      }
+    }
+    console.log(`[APP] Ingested ${totalIngested} files`);
+    updateTrayMenu();
+  })();
+  } catch (err) {
+    console.error('[APP] FATAL:', err);
+  }
 });
 
 app.on('window-all-closed', () => {
