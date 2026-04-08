@@ -1,12 +1,21 @@
 /**
  * Payment channel types for BSV nLocktime micropayments.
  *
- * Unidirectional channel: leecher pays seeder per piece.
- * Only 2 on-chain transactions per session (fund + settle).
+ * Revenue model: 100% of streaming revenue goes to token holders.
+ * Settlement TX fans out directly to holders proportionally.
+ * No 60/40 split. No intermediary. Token = licence = revenue right.
  */
 
 /** Channel lifecycle states */
 export type ChannelState = 'opening' | 'open' | 'closing' | 'closed';
+
+/** A recipient in a payment channel (token holder) */
+export interface Recipient {
+  /** BSV address */
+  address: string;
+  /** Share in basis points (10000 = 100%) */
+  bps: number;
+}
 
 /** Configuration for opening a payment channel */
 export interface ChannelConfig {
@@ -14,14 +23,16 @@ export interface ChannelConfig {
   fundingAmount: number;
   /** Satoshis per torrent piece */
   satsPerPiece: number;
-  /** BSV address to pay the seeder */
-  seederAddress: string;
-  /** BSV address to pay the content creator */
-  creatorAddress: string;
-  /** Creator's revenue share in basis points (6000 = 60%) */
-  creatorSplitBps: number;
+  /** Revenue recipients (token holders). Must sum to 10000 bps. */
+  recipients: Recipient[];
   /** Block height after which channel expires */
   timeoutBlockHeight: number;
+}
+
+/** Per-recipient amount in a state update */
+export interface RecipientPayment {
+  address: string;
+  amount: number;
 }
 
 /** Snapshot of channel state at a given sequence number */
@@ -30,13 +41,13 @@ export interface ChannelStateUpdate {
   sequenceNumber: number;
   /** Piece this payment is for */
   pieceIndex: number;
-  /** Cumulative satoshis owed to seeder (their share only) */
-  seederAmount: number;
-  /** Cumulative satoshis owed to creator */
-  creatorAmount: number;
+  /** Cumulative amounts per recipient */
+  recipientAmounts: RecipientPayment[];
+  /** Total sats paid so far */
+  totalPaid: number;
   /** Remaining change back to leecher */
   leecherChange: number;
-  /** Fully signed transaction hex (broadcastable by seeder) */
+  /** Fully signed transaction hex (broadcastable by any recipient) */
   signedTxHex: string;
 }
 
@@ -44,29 +55,17 @@ export interface ChannelStateUpdate {
 export interface PaymentChannelRecord {
   channelId: string;
   state: ChannelState;
-
-  /** Funding transaction details */
   fundingTxid: string;
   fundingVout: number;
   fundingAmount: number;
-
-  /** Channel parameters */
   satsPerPiece: number;
-  seederAddress: string;
-  creatorAddress: string;
-  creatorSplitBps: number;
+  recipients: Recipient[];
   timeoutBlockHeight: number;
-
-  /** Current state */
   sequenceNumber: number;
-  seederAmount: number;
-  creatorAmount: number;
+  recipientAmounts: RecipientPayment[];
+  totalPaid: number;
   leecherChange: number;
-
-  /** Latest signed tx held by seeder */
   latestTxHex: string;
-
-  /** Derived limits */
   maxPieces: number;
   totalPaidPieces: number;
 }

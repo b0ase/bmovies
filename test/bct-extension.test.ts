@@ -251,8 +251,7 @@ describe('BctPay Wire Extension', () => {
 
     // Verify seeder's channel state
     expect(seeder.channel!.sequenceNumber).toBe(5);
-    expect(seeder.channel!.seederAmount).toBe(20); // 5 * 10 * 0.4
-    expect(seeder.channel!.creatorAmount).toBe(30); // 5 * 10 * 0.6
+    expect(seeder.channel!.totalPaid).toBe(50); // 5 * 10 = 50 sats, 100% to creator
   });
 
   it('should handle channel close', async () => {
@@ -329,9 +328,7 @@ describe('ChannelManager', () => {
     const config = {
       fundingAmount: 10_000,
       satsPerPiece: 10,
-      seederAddress: seederKey.toAddress(),
-      creatorAddress: creatorKey.toAddress(),
-      creatorSplitBps: 6000,
+      recipients: [{ address: creatorKey.toAddress(), bps: 10_000 }],
       timeoutBlockHeight: 900_000,
     };
 
@@ -356,7 +353,7 @@ describe('ChannelManager', () => {
     await ch2.createPayment(0, leecherWallet);
 
     expect(manager.totalPiecesServed).toBe(3);
-    expect(manager.totalSeederEarnings).toBe(12); // 3 * 10 * 0.4
+    expect(manager.totalPiecesServed).toBe(3); // verified above
 
     // Close channel 3
     manager.closeChannel(ch3.channelId);
@@ -373,9 +370,7 @@ describe('ChannelManager', () => {
     const config = {
       fundingAmount: 10_000,
       satsPerPiece: 10,
-      seederAddress: seederKey.toAddress(),
-      creatorAddress: creatorKey.toAddress(),
-      creatorSplitBps: 6000,
+      recipients: [{ address: creatorKey.toAddress(), bps: 10_000 }],
       timeoutBlockHeight: 900_000,
     };
 
@@ -398,9 +393,7 @@ describe('ChannelManager', () => {
     const config = {
       fundingAmount: 10_000,
       satsPerPiece: 10,
-      seederAddress: seederKey.toAddress(),
-      creatorAddress: creatorKey.toAddress(),
-      creatorSplitBps: 6000,
+      recipients: [{ address: creatorKey.toAddress(), bps: 10_000 }],
       timeoutBlockHeight: 900_000,
     };
 

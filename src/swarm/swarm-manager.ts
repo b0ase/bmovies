@@ -259,9 +259,7 @@ export class SwarmManager extends EventEmitter {
     const config: ChannelConfig = {
       fundingAmount,
       satsPerPiece,
-      seederAddress: earner.wallet.address, // earner receives the "seeder" share
-      creatorAddress: manifest.creator.address,
-      creatorSplitBps: manifest.creator.splitBps,
+      recipients: [{ address: earner.wallet.address, bps: 10_000 }], // earner gets 100% of P2P transfer revenue
       timeoutBlockHeight: 900_000,
     };
 

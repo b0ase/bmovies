@@ -54,34 +54,20 @@ export class Wallet {
   /**
    * Build a payment channel update transaction.
    *
-   * This creates a valid, broadcastable transaction spending a funding UTXO
-   * and splitting the output between creator, seeder, and leecher change.
-   *
-   * @param fundingTxid - TXID of the funding output
-   * @param fundingVout - Output index of the funding output
-   * @param fundingAmount - Total satoshis in the funding output
-   * @param creatorAddress - Creator's BSV address
-   * @param creatorAmount - Satoshis to pay the creator
-   * @param seederAddress - Seeder's BSV address
-   * @param seederAmount - Satoshis to pay the seeder
-   * @param sequenceNumber - nSequence value (increments per payment)
-   * @param sourceTransaction - The funding transaction object (for signing)
-   * @returns Signed transaction hex
+   * Fans out to N recipients (token holders) proportionally.
+   * No fixed split — recipients and amounts are determined by
+   * the token holder snapshot at channel creation time.
    */
   buildPaymentTx(opts: {
-    fundingTxid: string;
     fundingVout: number;
     fundingAmount: number;
-    creatorAddress: string;
-    creatorAmount: number;
-    seederAddress: string;
-    seederAmount: number;
+    /** Recipients with their cumulative sat amounts */
+    recipients: Array<{ address: string; amount: number }>;
     sequenceNumber: number;
     sourceTransaction: Transaction;
   }): Transaction {
     const tx = new Transaction();
 
-    // Input: spend the funding UTXO
     tx.addInput({
       sourceTransaction: opts.sourceTransaction,
       sourceOutputIndex: opts.fundingVout,
@@ -89,19 +75,17 @@ export class Wallet {
       sequence: opts.sequenceNumber,
     });
 
-    // Output 0: creator's share
-    if (opts.creatorAmount > 0) {
-      tx.addP2PKHOutput(opts.creatorAddress, opts.creatorAmount);
+    // Outputs: one per recipient with amount > 0
+    let totalPaid = 0;
+    for (const r of opts.recipients) {
+      if (r.amount > 0) {
+        tx.addP2PKHOutput(r.address, r.amount);
+        totalPaid += r.amount;
+      }
     }
 
-    // Output 1: seeder's share
-    if (opts.seederAmount > 0) {
-      tx.addP2PKHOutput(opts.seederAddress, opts.seederAmount);
-    }
-
-    // Output 2: leecher's change
-    const totalPaid = opts.creatorAmount + opts.seederAmount;
-    const minerFee = 200; // ~200 bytes at 1 sat/byte
+    // Change output back to leecher
+    const minerFee = 150 + opts.recipients.length * 34; // base + per-output
     const change = opts.fundingAmount - totalPaid - minerFee;
     if (change > 0) {
       tx.addP2PKHOutput(this.address, change);

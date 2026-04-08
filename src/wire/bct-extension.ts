@@ -166,8 +166,8 @@ export function createBctPayExtension(options: BctPayOptions) {
           channelId: this.channel.channelId,
           pieceIndex,
           sequenceNumber: update.sequenceNumber,
-          seederAmount: update.seederAmount,
-          creatorAmount: update.creatorAmount,
+          seederAmount: 0,
+          creatorAmount: update.totalPaid,
           signedTxHex: update.signedTxHex,
         };
 
@@ -206,9 +206,7 @@ export function createBctPayExtension(options: BctPayOptions) {
       const config: ChannelConfig = {
         fundingAmount: msg.depositSats,
         satsPerPiece: manifest.pricing.satsPerPiece,
-        seederAddress: wallet.address,
-        creatorAddress: manifest.creator.address,
-        creatorSplitBps: manifest.creator.splitBps,
+        recipients: [{ address: manifest.creator.address, bps: 10_000 }],
         timeoutBlockHeight: currentBlockHeight + DEFAULTS.timeoutBlocks,
       };
 
@@ -219,7 +217,7 @@ export function createBctPayExtension(options: BctPayOptions) {
         channelId: this.channel.channelId,
         seederAddress: wallet.address,
         creatorAddress: manifest.creator.address,
-        creatorSplitBps: manifest.creator.splitBps,
+        creatorSplitBps: 10_000,
         satsPerPiece: manifest.pricing.satsPerPiece,
       };
 
@@ -232,21 +230,13 @@ export function createBctPayExtension(options: BctPayOptions) {
       if (role !== 'leecher') return;
 
       const config: ChannelConfig = {
-        fundingAmount: 0, // will be set when funding tx is built
+        fundingAmount: 10_000, // placeholder
         satsPerPiece: msg.satsPerPiece,
-        seederAddress: msg.seederAddress,
-        creatorAddress: msg.creatorAddress,
-        creatorSplitBps: msg.creatorSplitBps,
+        recipients: [{ address: msg.creatorAddress, bps: 10_000 }],
         timeoutBlockHeight: currentBlockHeight + DEFAULTS.timeoutBlocks,
       };
 
-      // We'll set the real funding amount when we fund
-      // For now, use the deposit amount from our open request
-      // (stored temporarily — in real impl we'd track this)
-      this.channel = new PaymentChannel(
-        { ...config, fundingAmount: 10_000 }, // placeholder, overridden by fund()
-        msg.channelId,
-      );
+      this.channel = new PaymentChannel(config, msg.channelId);
 
       this.emit('channel:open', msg.channelId);
 
@@ -273,9 +263,9 @@ export function createBctPayExtension(options: BctPayOptions) {
         this.channel.validatePayment({
           sequenceNumber: msg.sequenceNumber,
           pieceIndex: msg.pieceIndex,
-          seederAmount: msg.seederAmount,
-          creatorAmount: msg.creatorAmount,
-          leecherChange: 0, // not validated on seeder side
+          recipientAmounts: [{ address: manifest.creator.address, amount: msg.creatorAmount }],
+          totalPaid: msg.creatorAmount + msg.seederAmount,
+          leecherChange: 0,
           signedTxHex: msg.signedTxHex,
         });
 

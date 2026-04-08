@@ -48,9 +48,10 @@ describe('Settlement TX Validation', () => {
     channelConfig = {
       fundingAmount: 10_000,
       satsPerPiece: 10,
-      seederAddress: seederKey.toAddress(),
-      creatorAddress: creatorKey.toAddress(),
-      creatorSplitBps: 6000,
+      recipients: [
+        { address: creatorKey.toAddress(), bps: 6000 },
+        { address: seederKey.toAddress(), bps: 4000 },
+      ],
       timeoutBlockHeight: 900_000,
     };
 
@@ -147,8 +148,8 @@ describe('Settlement TX Validation', () => {
 
     // Validate before settlement
     const record = channel.toRecord();
-    expect(record.creatorAmount).toBe(600);
-    expect(record.seederAmount).toBe(400);
+    expect(record.recipientAmounts[0].amount).toBe(600); // 60%
+    expect(record.recipientAmounts[1].amount).toBe(400); // 40%
 
     const result = validateSettlementTx(
       channel.getSettlementTx(),
@@ -163,7 +164,7 @@ describe('Settlement TX Validation', () => {
     const tx = result.parsedTx!;
     expect(tx.outputs[0].satoshis).toBe(600);  // creator
     expect(tx.outputs[1].satoshis).toBe(400);  // seeder
-    expect(tx.outputs[2].satoshis).toBe(8800); // change: 10000 - 600 - 400 - 200
+    expect(tx.outputs[2].satoshis).toBe(8782); // change: 10000 - 600 - 400 - 218 (150 + 2*34 fee)
   });
 });
 

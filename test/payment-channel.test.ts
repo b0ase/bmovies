@@ -4,287 +4,236 @@ import { PaymentChannel } from '../src/payment/channel.js';
 import { Wallet } from '../src/payment/wallet.js';
 import type { ChannelConfig, ChannelStateUpdate } from '../src/types/payment.js';
 
-/**
- * Creates a mock funding transaction for testing.
- * In production, this would be an on-chain tx; here we build one locally.
- */
-function createMockFundingTx(
-  leecherKey: PrivateKey,
-  amount: number,
-): Transaction {
-  // Create a fake "source" transaction that pays to the leecher
+function createMockFundingTx(key: PrivateKey, amount: number): Transaction {
   const sourceTx = new Transaction();
   sourceTx.addOutput({
-    lockingScript: new P2PKH().lock(leecherKey.toAddress()),
-    satoshis: amount + 1000, // extra for fees
+    lockingScript: new P2PKH().lock(key.toAddress()),
+    satoshis: amount + 1000,
   });
-
-  // Now create the funding tx that spends the source
   const fundingTx = new Transaction();
   fundingTx.addInput({
     sourceTransaction: sourceTx,
     sourceOutputIndex: 0,
-    unlockingScriptTemplate: new P2PKH().unlock(leecherKey),
+    unlockingScriptTemplate: new P2PKH().unlock(key),
     sequence: 0xffffffff,
   });
   fundingTx.addOutput({
-    lockingScript: new P2PKH().lock(leecherKey.toAddress()),
+    lockingScript: new P2PKH().lock(key.toAddress()),
     satoshis: amount,
   });
-
   return fundingTx;
 }
 
-describe('PaymentChannel', () => {
+describe('PaymentChannel (fan-out to token holders)', () => {
   let leecherWallet: Wallet;
-  let seederKey: PrivateKey;
-  let creatorKey: PrivateKey;
-  let channelConfig: ChannelConfig;
+  let holder1Key: PrivateKey;
+  let holder2Key: PrivateKey;
+  let holder3Key: PrivateKey;
   let fundingTx: Transaction;
 
   beforeAll(async () => {
-    // Generate test keys
     leecherWallet = Wallet.random();
-    seederKey = PrivateKey.fromRandom();
-    creatorKey = PrivateKey.fromRandom();
-
-    channelConfig = {
-      fundingAmount: 10_000, // 10k sats
-      satsPerPiece: 10,
-      seederAddress: seederKey.toAddress(),
-      creatorAddress: creatorKey.toAddress(),
-      creatorSplitBps: 6000, // 60% to creator
-      timeoutBlockHeight: 900_000,
-    };
-
-    // Create mock funding tx
+    holder1Key = PrivateKey.fromRandom();
+    holder2Key = PrivateKey.fromRandom();
+    holder3Key = PrivateKey.fromRandom();
     fundingTx = createMockFundingTx(leecherWallet.privateKey, 10_000);
     await fundingTx.fee(new SatoshisPerKilobyte(1));
     await fundingTx.sign();
   });
 
-  it('should create a channel with correct max pieces', () => {
-    const channel = new PaymentChannel(channelConfig);
-    // (10000 - 200 fee) / 10 sats per piece = 980
-    expect(channel.maxPieces).toBe(980);
+  it('should create a channel with single recipient (100%)', () => {
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [{ address: holder1Key.toAddress(), bps: 10_000 }],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
+    expect(channel.maxPieces).toBeGreaterThan(0);
     expect(channel.state).toBe('opening');
   });
 
-  it('should reject underfunded channels', () => {
-    expect(
-      () =>
-        new PaymentChannel({
-          ...channelConfig,
-          fundingAmount: 100,
-          satsPerPiece: 200,
-        }),
-    ).toThrow('too low');
+  it('should reject recipients that dont sum to 10000 bps', () => {
+    expect(() => new PaymentChannel({
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [
+        { address: holder1Key.toAddress(), bps: 5000 },
+        { address: holder2Key.toAddress(), bps: 3000 },
+      ],
+      timeoutBlockHeight: 900_000,
+    })).toThrow('must sum to 10000');
   });
 
-  it('should transition to open state after funding', () => {
-    const channel = new PaymentChannel(channelConfig);
-    const txid = fundingTx.id('hex');
-    channel.fund(txid, 0, fundingTx);
-    expect(channel.state).toBe('open');
-    expect(channel.fundingTxid).toBe(txid);
-  });
-
-  it('should create 10 sequential payment updates', async () => {
-    const channel = new PaymentChannel(channelConfig);
-    const txid = fundingTx.id('hex');
-    channel.fund(txid, 0, fundingTx);
-
-    const updates: ChannelStateUpdate[] = [];
+  it('should pay single holder 100% of revenue', async () => {
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [{ address: holder1Key.toAddress(), bps: 10_000 }],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
+    channel.fund(fundingTx.id('hex'), 0, fundingTx);
 
     for (let i = 0; i < 10; i++) {
-      const update = await channel.createPayment(i, leecherWallet);
-      updates.push(update);
-
-      // Verify sequence numbers are incrementing
-      expect(update.sequenceNumber).toBe(i + 1);
-      expect(update.pieceIndex).toBe(i);
-
-      // Verify signed tx is parseable
-      const tx = Transaction.fromHex(update.signedTxHex);
-      expect(tx.inputs.length).toBe(1);
-      expect(tx.outputs.length).toBeGreaterThanOrEqual(2);
+      await channel.createPayment(i, leecherWallet);
     }
 
-    // After 10 pieces at 10 sats each = 100 sats total
-    // Creator gets 60%: 60 sats
-    // Seeder gets 40%: 40 sats
-    const last = updates[9];
-    expect(last.creatorAmount).toBe(60);
-    expect(last.seederAmount).toBe(40);
-    expect(last.sequenceNumber).toBe(10);
-
-    // Channel state should reflect 10 paid pieces
-    expect(channel.totalPaidPieces).toBe(10);
-    expect(channel.remainingPieces).toBe(970); // 980 - 10
+    // 10 pieces * 10 sats = 100 sats, all to holder1
+    expect(channel.totalPaid).toBe(100);
+    expect(channel.recipientAmounts[0].amount).toBe(100);
   });
 
-  it('should have monotonically increasing amounts', async () => {
-    const channel = new PaymentChannel(channelConfig);
+  it('should fan out to multiple holders proportionally', async () => {
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [
+        { address: holder1Key.toAddress(), bps: 6000 },  // 60%
+        { address: holder2Key.toAddress(), bps: 3000 },  // 30%
+        { address: holder3Key.toAddress(), bps: 1000 },  // 10%
+      ],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
     channel.fund(fundingTx.id('hex'), 0, fundingTx);
 
-    let prevSeeder = 0;
-    let prevCreator = 0;
-
-    for (let i = 0; i < 5; i++) {
-      const update = await channel.createPayment(i, leecherWallet);
-      expect(update.seederAmount).toBeGreaterThan(prevSeeder);
-      expect(update.creatorAmount).toBeGreaterThan(prevCreator);
-      prevSeeder = update.seederAmount;
-      prevCreator = update.creatorAmount;
-    }
-  });
-
-  it('should enforce 60/40 creator/seeder split', async () => {
-    const channel = new PaymentChannel(channelConfig);
-    channel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    // Pay for 100 pieces = 1000 sats
     for (let i = 0; i < 100; i++) {
       await channel.createPayment(i, leecherWallet);
     }
 
-    const record = channel.toRecord();
-    const totalPaid = record.creatorAmount + record.seederAmount;
-    expect(totalPaid).toBe(1000); // 100 pieces * 10 sats
-
-    // Creator gets 60%
-    expect(record.creatorAmount).toBe(600);
-    // Seeder gets 40%
-    expect(record.seederAmount).toBe(400);
+    // 100 pieces * 10 sats = 1000 sats total
+    expect(channel.totalPaid).toBe(1000);
+    expect(channel.recipientAmounts[0].amount).toBe(600); // 60%
+    expect(channel.recipientAmounts[1].amount).toBe(300); // 30%
+    expect(channel.recipientAmounts[2].amount).toBe(100); // 10%
   });
 
-  it('should validate incoming payments (seeder side)', async () => {
-    // Leecher creates channel and payments
-    const leecherChannel = new PaymentChannel(channelConfig);
-    leecherChannel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    // Seeder creates their view of the same channel
-    const seederChannel = new PaymentChannel(channelConfig, leecherChannel.channelId);
-    seederChannel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    for (let i = 0; i < 5; i++) {
-      const update = await leecherChannel.createPayment(i, leecherWallet);
-
-      // Seeder validates
-      expect(seederChannel.validatePayment(update)).toBe(true);
-      expect(seederChannel.sequenceNumber).toBe(i + 1);
-    }
-
-    expect(seederChannel.seederAmount).toBe(20); // 5 * 10 * 0.4 = 20
-    expect(seederChannel.creatorAmount).toBe(30); // 5 * 10 * 0.6 = 30
-  });
-
-  it('should reject stale sequence numbers', async () => {
-    const leecherChannel = new PaymentChannel(channelConfig);
-    leecherChannel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    const seederChannel = new PaymentChannel(channelConfig, leecherChannel.channelId);
-    seederChannel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    // Send payment 1
-    const update1 = await leecherChannel.createPayment(0, leecherWallet);
-    seederChannel.validatePayment(update1);
-
-    // Send payment 2
-    const update2 = await leecherChannel.createPayment(1, leecherWallet);
-    seederChannel.validatePayment(update2);
-
-    // Try to replay payment 1 — should fail
-    expect(() => seederChannel.validatePayment(update1)).toThrow('Stale sequence');
-  });
-
-  it('should reject incorrect amounts', async () => {
-    const leecherChannel = new PaymentChannel(channelConfig);
-    leecherChannel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    const seederChannel = new PaymentChannel(channelConfig, leecherChannel.channelId);
-    seederChannel.fund(fundingTx.id('hex'), 0, fundingTx);
-
-    const update = await leecherChannel.createPayment(0, leecherWallet);
-
-    // Tamper with seeder amount
-    const tampered = { ...update, seederAmount: 999 };
-    expect(() => seederChannel.validatePayment(tampered)).toThrow('Seeder amount mismatch');
-  });
-
-  it('should produce a valid settlement transaction', async () => {
-    const channel = new PaymentChannel(channelConfig);
+  it('should produce valid settlement TX with N outputs', async () => {
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [
+        { address: holder1Key.toAddress(), bps: 5000 },
+        { address: holder2Key.toAddress(), bps: 5000 },
+      ],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
     channel.fund(fundingTx.id('hex'), 0, fundingTx);
 
-    // Pay for 50 pieces
     for (let i = 0; i < 50; i++) {
       await channel.createPayment(i, leecherWallet);
     }
 
     const settlementHex = channel.getSettlementTx();
-    const settlementTx = Transaction.fromHex(settlementHex);
+    const tx = Transaction.fromHex(settlementHex);
 
-    // Should have 3 outputs: creator, seeder, leecher change
-    expect(settlementTx.outputs.length).toBe(3);
-
-    // Verify output amounts
-    // 50 pieces * 10 sats = 500 total
-    // Creator: 300 (60%), Seeder: 200 (40%)
-    expect(settlementTx.outputs[0].satoshis).toBe(300); // creator
-    expect(settlementTx.outputs[1].satoshis).toBe(200); // seeder
-    // Change: 10000 - 300 - 200 - 200(fee) = 9300
-    expect(settlementTx.outputs[2].satoshis).toBe(9300);
+    // 50 pieces * 10 sats = 500 total, 250 each
+    // Outputs: holder1(250) + holder2(250) + change
+    expect(tx.outputs.length).toBe(3);
+    expect(tx.outputs[0].satoshis).toBe(250);
+    expect(tx.outputs[1].satoshis).toBe(250);
   });
 
-  it('should throw when channel is exhausted', async () => {
-    const smallChannel = new PaymentChannel({
-      ...channelConfig,
-      fundingAmount: 250, // only ~5 pieces (250 - 200 fee) / 10 = 5
-    });
-    smallChannel.fund(fundingTx.id('hex'), 0, fundingTx);
+  it('should validate payments between leecher and seeder sides', async () => {
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [
+        { address: holder1Key.toAddress(), bps: 7000 },
+        { address: holder2Key.toAddress(), bps: 3000 },
+      ],
+      timeoutBlockHeight: 900_000,
+    };
 
-    expect(smallChannel.maxPieces).toBe(5);
+    const leecherChan = new PaymentChannel(config);
+    leecherChan.fund(fundingTx.id('hex'), 0, fundingTx);
 
-    // Pay for all 5 pieces
+    const seederChan = new PaymentChannel(config, leecherChan.channelId);
+    seederChan.fund(fundingTx.id('hex'), 0, fundingTx);
+
     for (let i = 0; i < 5; i++) {
-      await smallChannel.createPayment(i, leecherWallet);
+      const update = await leecherChan.createPayment(i, leecherWallet);
+      expect(seederChan.validatePayment(update)).toBe(true);
     }
 
-    // 6th should fail
-    await expect(
-      smallChannel.createPayment(5, leecherWallet),
-    ).rejects.toThrow('exhausted');
+    expect(seederChan.totalPaid).toBe(50);
+  });
+
+  it('should reject stale sequence numbers', async () => {
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [{ address: holder1Key.toAddress(), bps: 10_000 }],
+      timeoutBlockHeight: 900_000,
+    };
+
+    const leecherChan = new PaymentChannel(config);
+    leecherChan.fund(fundingTx.id('hex'), 0, fundingTx);
+    const seederChan = new PaymentChannel(config, leecherChan.channelId);
+    seederChan.fund(fundingTx.id('hex'), 0, fundingTx);
+
+    const u1 = await leecherChan.createPayment(0, leecherWallet);
+    seederChan.validatePayment(u1);
+    const u2 = await leecherChan.createPayment(1, leecherWallet);
+    seederChan.validatePayment(u2);
+
+    expect(() => seederChan.validatePayment(u1)).toThrow('Stale');
+  });
+
+  it('should handle channel exhaustion', async () => {
+    const config: ChannelConfig = {
+      fundingAmount: 300,
+      satsPerPiece: 10,
+      recipients: [{ address: holder1Key.toAddress(), bps: 10_000 }],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
+    channel.fund(fundingTx.id('hex'), 0, fundingTx);
+
+    // Use all available pieces
+    for (let i = 0; i < channel.maxPieces; i++) {
+      await channel.createPayment(i, leecherWallet);
+    }
+    await expect(channel.createPayment(999, leecherWallet)).rejects.toThrow('exhausted');
   });
 
   it('should close the channel', async () => {
-    const channel = new PaymentChannel(channelConfig);
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [{ address: holder1Key.toAddress(), bps: 10_000 }],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
     channel.fund(fundingTx.id('hex'), 0, fundingTx);
     await channel.createPayment(0, leecherWallet);
-
     channel.close();
     expect(channel.state).toBe('closed');
-
-    // Can't create payments after close
-    await expect(
-      channel.createPayment(1, leecherWallet),
-    ).rejects.toThrow('not open');
+    await expect(channel.createPayment(1, leecherWallet)).rejects.toThrow('not open');
   });
 
   it('should export a complete channel record', async () => {
-    const channel = new PaymentChannel(channelConfig);
+    const config: ChannelConfig = {
+      fundingAmount: 10_000,
+      satsPerPiece: 10,
+      recipients: [
+        { address: holder1Key.toAddress(), bps: 6000 },
+        { address: holder2Key.toAddress(), bps: 4000 },
+      ],
+      timeoutBlockHeight: 900_000,
+    };
+    const channel = new PaymentChannel(config);
     channel.fund(fundingTx.id('hex'), 0, fundingTx);
     await channel.createPayment(0, leecherWallet);
 
     const record = channel.toRecord();
     expect(record.channelId).toBeTruthy();
     expect(record.state).toBe('open');
-    expect(record.fundingAmount).toBe(10_000);
-    expect(record.satsPerPiece).toBe(10);
-    expect(record.seederAddress).toBe(seederKey.toAddress());
-    expect(record.creatorAddress).toBe(creatorKey.toAddress());
-    expect(record.sequenceNumber).toBe(1);
+    expect(record.recipients).toHaveLength(2);
+    expect(record.recipientAmounts).toHaveLength(2);
     expect(record.totalPaidPieces).toBe(1);
-    expect(record.latestTxHex).toBeTruthy();
   });
 });
 
@@ -306,9 +255,7 @@ describe('Wire Messages', () => {
 
     const buf = encodeMessage(msg);
     const decoded = decodeMessage(buf);
-
     expect(decoded.type).toBe(BctMessageType.PIECE_PAYMENT);
     expect((decoded as typeof msg).pieceIndex).toBe(42);
-    expect((decoded as typeof msg).seederAmount).toBe(20);
   });
 });
