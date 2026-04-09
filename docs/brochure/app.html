@@ -50,6 +50,10 @@
     .server-input { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; }
     .server-input input { font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem; padding: 0.5rem 0.7rem; border: 1px solid #ddd; flex: 1; }
     .server-input button { background: #000; color: #fff; border: none; padding: 0.5rem 1rem; font-family: inherit; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; cursor: pointer; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; }
+    nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    nav a:hover { color: #000; }
+    nav a.active { color: #000; border-color: #000; }
   </style>
 </head>
 <body>
@@ -57,11 +61,12 @@
     <h1>BITCOINTORRENT</h1>
     <div class="tagline">Peer-to-peer streaming &mdash; BSV micropayments</div>
   </header>
-  <nav style="padding:0 3rem;border-bottom:1px solid #eee;display:flex;gap:0;">
-    <a href="index.html" style="padding:0.8rem 1.2rem;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;">Home</a>
-    <a href="app.html" style="padding:0.8rem 1.2rem;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#000;text-decoration:none;border-bottom:2px solid #000;margin-bottom:-1px;">Stream</a>
-    <a href="tokenize.html" style="padding:0.8rem 1.2rem;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;">Tokenize</a>
-    <a href="https://github.com/b0ase/BitCoinTorrent" style="padding:0.8rem 1.2rem;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;">GitHub</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="app.html" class="active">Stream</a>
+    <a href="tokenize.html">Tokenize</a>
+    <a href="BitCoinTorrent-Report.html">Report</a>
+    <a href="https://github.com/b0ase/BitCoinTorrent">GitHub</a>
   </nav>
   <main>
     <div class="server-input">
