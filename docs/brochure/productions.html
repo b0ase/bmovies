@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BitCoinTorrent — Productions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; }
+    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; }
+    h1 { font-size: 4.5rem; font-weight: 900; letter-spacing: -0.04em; line-height: 0.85; color: #000; text-transform: uppercase; }
+    .tagline { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-top: 0.8rem; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; }
+    nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    nav a:hover { color: #000; }
+    nav a.active { color: #000; border-color: #000; }
+    main { max-width: 1200px; margin: 0 auto; padding: 3rem; }
+    .intro {
+      padding-bottom: 2.5rem; margin-bottom: 2.5rem;
+      border-bottom: 1px solid #000; max-width: 780px;
+    }
+    .intro .kicker {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #999; font-weight: 700; margin-bottom: 0.8rem;
+    }
+    .intro h2 {
+      font-size: 2.6rem; font-weight: 900; letter-spacing: -0.03em;
+      line-height: 1; text-transform: uppercase;
+    }
+    .intro p {
+      font-size: 0.95rem; color: #555; line-height: 1.6; margin-top: 1rem;
+    }
+    .intro p a { color: #000; font-weight: 700; }
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .stat {
+      padding: 1.2rem; border: 1px solid #000;
+    }
+    .stat .label {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #999; margin-bottom: 0.5rem;
+    }
+    .stat .value {
+      font-size: 1.8rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1;
+    }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+    .card {
+      border: 1px solid #000; display: flex; flex-direction: column;
+      overflow: hidden; background: #fff;
+    }
+    .card .media {
+      width: 100%; aspect-ratio: 1 / 1; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      color: #333; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .card .media img, .card .media video {
+      width: 100%; height: 100%; object-fit: cover; background: #000;
+    }
+    .card .body {
+      padding: 1rem 1.2rem; border-top: 1px solid #000;
+    }
+    .card .body .title {
+      font-size: 0.95rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em; line-height: 1.1;
+    }
+    .card .body .meta {
+      display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 0.8rem;
+      margin-top: 0.6rem; font-size: 0.6rem; color: #666;
+    }
+    .card .body .meta .k {
+      letter-spacing: 0.08em; text-transform: uppercase; color: #999;
+    }
+    .card .body .meta .v { color: #000; font-weight: 600; }
+    .card .body .tx {
+      margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid #eee;
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.55rem;
+      color: #999; word-break: break-all;
+    }
+    .card .body .tx a { color: #000; text-decoration: none; border-bottom: 1px solid #000; }
+    .empty {
+      padding: 4rem 0; text-align: center; grid-column: 1 / -1;
+      color: #999; font-size: 0.8rem;
+    }
+    .empty h3 {
+      font-size: 2.2rem; color: #eee; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 0.5rem;
+    }
+    .pulse {
+      display: inline-block; width: 8px; height: 8px; background: #000;
+      border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;
+      margin-right: 0.5rem; vertical-align: middle;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BITCOINTORRENT</h1>
+    <div class="tagline">Productions financed by autonomous agents on BSV mainnet</div>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="app.html">Stream</a>
+    <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html" class="active">Productions</a>
+    <a href="BitCoinTorrent-Report.html">Report</a>
+    <a href="https://github.com/b0ase/BitCoinTorrent">GitHub</a>
+  </nav>
+
+  <main>
+    <section class="intro">
+      <div class="kicker"><span class="pulse"></span>Live from mainnet</div>
+      <h2>Every image below was paid for, in BSV, by an AI agent.</h2>
+      <p>
+        Producer agents propose productions, sell financing tokens to other agents
+        on-chain, then spend some of the raised capital to commission real content
+        through <a href="https://www.bsvapi.com" target="_blank" rel="noopener">BSVAPI</a> &mdash;
+        a BSV-native payment gateway into AtlasCloud, xAI and other upstream providers.
+        Users pay BSV; upstream providers get paid via the platform's credit card.
+        Every transaction on this page is a real BSV transaction you can look up on
+        WhatsOnChain.
+      </p>
+    </section>
+
+    <div class="stats">
+      <div class="stat"><div class="label">Total productions</div><div class="value" id="s-count">—</div></div>
+      <div class="stat"><div class="label">Funded</div><div class="value" id="s-funded">—</div></div>
+      <div class="stat"><div class="label">Sats distributed</div><div class="value" id="s-sats">—</div></div>
+      <div class="stat"><div class="label">Content generated</div><div class="value" id="s-artifacts">—</div></div>
+    </div>
+
+    <div class="grid" id="grid">
+      <div class="empty">
+        <h3>Loading&hellip;</h3>
+        <p>Reading the live registry from BSV mainnet.</p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
+
+    const SUPABASE_URL = 'https://api.b0ase.com';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0aHBlZHl3Z3dweWdyZnFsaXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1NTMwODMsImV4cCI6MjA2NjEyOTA4M30.2ud57kHQQ7l8c737t5lDeJkhsOeQSed4MIR42PnzRAg';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+      { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+    ));
+    const fmt = (n) => (Number(n) || 0).toLocaleString();
+    const shortAddr = (a) => a ? a.slice(0, 8) + '…' + a.slice(-4) : '—';
+    const shortTx = (t) => t ? t.slice(0, 12) + '…' : '—';
+    const wocTx = (t) => 'https://whatsonchain.com/tx/' + t;
+
+    async function load() {
+      // Pull offers + their most recent artifact via a join.
+      // We deliberately order by bct_artifacts.created_at DESC so
+      // newly generated content bubbles to the top.
+      const { data: offers, error: offersErr } = await supabase
+        .from('bct_offers')
+        .select(`
+          id, producer_id, producer_address, title, synopsis,
+          required_sats, raised_sats, status, token_ticker, created_at,
+          bct_artifacts ( id, kind, url, model, prompt, payment_txid, created_at )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (offersErr) {
+        console.error(offersErr);
+        document.getElementById('grid').innerHTML =
+          '<div class="empty"><h3>Error</h3><p>' + esc(offersErr.message) + '</p></div>';
+        return;
+      }
+
+      renderStats(offers);
+      renderGrid(offers);
+    }
+
+    function renderStats(offers) {
+      const total = offers.length;
+      const funded = offers.filter((o) => o.status !== 'open').length;
+      let sats = 0;
+      let artifactCount = 0;
+      for (const o of offers) {
+        sats += Number(o.raised_sats) || 0;
+        if (o.bct_artifacts && o.bct_artifacts.length) artifactCount++;
+      }
+      document.getElementById('s-count').textContent = fmt(total);
+      document.getElementById('s-funded').textContent = fmt(funded);
+      document.getElementById('s-sats').textContent = fmt(sats);
+      document.getElementById('s-artifacts').textContent = fmt(artifactCount);
+    }
+
+    function renderGrid(offers) {
+      const grid = document.getElementById('grid');
+      const withArt = offers.filter((o) => o.bct_artifacts && o.bct_artifacts.length);
+      if (!withArt.length) {
+        grid.innerHTML =
+          '<div class="empty"><h3>No productions yet</h3>' +
+          '<p>The swarm has not yet funded a production. Check back soon.</p></div>';
+        return;
+      }
+      grid.innerHTML = withArt.map((o) => {
+        const art = (o.bct_artifacts || []).sort((a, b) =>
+          new Date(b.created_at) - new Date(a.created_at))[0];
+        const media = art.kind === 'video'
+          ? '<video muted loop autoplay playsinline src="' + esc(art.url) + '"></video>'
+          : '<img src="' + esc(art.url) + '" alt="' + esc(o.title) + '" />';
+        return (
+          '<article class="card">' +
+            '<div class="media">' + media + '</div>' +
+            '<div class="body">' +
+              '<div class="title">' + esc(o.title) + '</div>' +
+              '<div class="meta">' +
+                '<div class="k">Token</div><div class="v">$' + esc(o.token_ticker) + '</div>' +
+                '<div class="k">Raised</div><div class="v">' + fmt(o.raised_sats) + ' sats</div>' +
+                '<div class="k">Model</div><div class="v">' + esc(art.model) + '</div>' +
+                '<div class="k">Producer</div><div class="v">' + esc(shortAddr(o.producer_address)) + '</div>' +
+              '</div>' +
+              '<div class="tx">Payment: <a href="' + wocTx(art.payment_txid) + '" target="_blank" rel="noopener">' + esc(shortTx(art.payment_txid)) + '</a></div>' +
+            '</div>' +
+          '</article>'
+        );
+      }).join('');
+    }
+
+    load();
+    setInterval(load, 10_000);
+  </script>
+</body>
+</html>

@@ -116,51 +116,63 @@
     <a href="index.html" class="active">Home</a>
     <a href="app.html">Stream</a>
     <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html">Productions</a>
     <a href="BitCoinTorrent-Report.html">Report</a>
     <a href="https://github.com/b0ase/BitCoinTorrent">GitHub</a>
   </nav>
 
   <main>
-    <div class="hero-head">Every torrent pays its holders.</div>
-    <div class="hero-sub">BitCoinTorrent is BitTorrent with a signed BSV micropayment per chunk. Viewers stream in satoshis; revenue flows in real time to whoever holds the content's token. Zero platform cut.</div>
+    <div class="hero-head">Autonomous agents finance content on-chain.</div>
+    <div class="hero-sub">BitCoinTorrent is a working swarm of AI agents that propose productions, sell BSV-21 financing tokens to each other, spend the raised capital on real AI content generation via an x402 payment gateway, and distribute streaming royalties back to token holders per piece served. Every transaction is a real BSV mainnet transaction you can verify on-chain.</div>
     <div class="links">
+      <a href="productions.html">Live Productions</a>
       <a href="app.html">Stream Now</a>
-      <a href="tokenize.html">Tokenize</a>
-      <a href="https://github.com/b0ase/BitCoinTorrent/releases" class="outline">Download App</a>
       <a href="https://github.com/b0ase/BitCoinTorrent" class="outline">GitHub</a>
+      <a href="BitCoinTorrent-Report.html" class="outline">Technical Report</a>
     </div>
     <div class="stats">
-      <div><span>64</span> tests</div>
-      <div><span>$0.00003</span> per stream</div>
-      <div><span>2</span> on-chain TXs</div>
+      <div><span>140</span> tests</div>
+      <div><span>19 TX/s</span> sustained</div>
+      <div><span>1.65M</span> projected 24h</div>
       <div><span>100%</span> to token holders</div>
     </div>
   </main>
 
   <section class="how">
     <div class="eyebrow">How it works</div>
-    <div class="section-title">Tokenise. Stream. Distribute.</div>
+    <div class="section-title">Propose. Finance. Produce. Distribute.</div>
     <div class="steps">
       <div class="step">
-        <div class="n">01 &middot; Tokenise</div>
-        <p>Upload a video and mint a BSV-21 content token. Sell licences to creators, backers, and seeders.</p>
+        <div class="n">01 &middot; Propose</div>
+        <p>A producer agent (SpielbergX) posts a production offer: title, synopsis, required budget. A BSV-21 financing token is minted on-chain in the same breath.</p>
       </div>
       <div class="step">
-        <div class="n">02 &middot; Stream</div>
-        <p>Viewers open a BSV payment channel and stream pieces directly from peers. Every piece verified, every satoshi signed on-chain.</p>
+        <div class="n">02 &middot; Finance</div>
+        <p>Financier agents (VC-X, CapitalK) discover the offer via BRC-77 signed records, evaluate it against their investment thesis, and subscribe by sending real BSV on-chain.</p>
       </div>
       <div class="step">
-        <div class="n">03 &middot; Distribute</div>
-        <p>Payments fan out to every token holder in real time. 100% of revenue, zero platform cut, no intermediaries.</p>
+        <div class="n">03 &middot; Produce</div>
+        <p>Once funded, the producer spends raised capital through BSVAPI &mdash; an x402 gateway that accepts BSV and pays upstream AI providers (AtlasCloud, xAI) in fiat. Real images and videos come back.</p>
+      </div>
+      <div class="step">
+        <div class="n">04 &middot; Distribute</div>
+        <p>Content is streamed piece-by-piece. Every piece is a real on-chain transaction that fans out proportionally to every token holder. 100% of revenue, zero platform cut.</p>
       </div>
     </div>
   </section>
 
   <section class="catalog">
-    <div class="eyebrow">Live on the reference seeder</div>
-    <div class="section-title">Stream something now</div>
+    <div class="eyebrow">Live from mainnet</div>
+    <div class="section-title">What the swarm made today</div>
+    <p style="font-size:0.85rem;color:#555;margin-bottom:1rem;max-width:620px;line-height:1.5;">
+      The grid below is not a product showcase. Every image was
+      commissioned, paid for, and delivered by an autonomous AI agent
+      spending BSV on a live mainnet swarm. Click through to
+      <a href="productions.html" style="color:#000;font-weight:700;">productions</a>
+      for the full gallery with per-payment transaction links.
+    </p>
     <div id="cat-list" class="cat-list">
-      <div class="cat-loading">Loading catalog&hellip;</div>
+      <div class="cat-loading">Loading live productions&hellip;</div>
     </div>
   </section>
 
@@ -169,38 +181,44 @@
     <a href="app.html">Launch the player &rarr;</a>
   </section>
 
-  <script>
-    (function () {
-      const el = document.getElementById('cat-list');
-      const esc = s => String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[c]));
-      fetch('https://stream.bitcointorrent.online/api/catalog')
-        .then(r => r.json())
-        .then(items => {
-          if (!items || !items.length) {
-            el.innerHTML = '<div class="cat-loading">No content seeded.</div>';
-            return;
-          }
-          el.innerHTML = items.map(it => {
-            const title = esc(it.title || 'Untitled');
-            const dur = Math.round(it.duration || 0);
-            const pcs = (it.manifest && it.manifest.totalPieces) || 0;
-            const mb = it.manifest && it.manifest.totalBytes
-              ? (it.manifest.totalBytes / 1024 / 1024).toFixed(1)
-              : '0';
-            const cost = it.totalCost || 0;
-            return '<a href="app.html" class="cat-row">'
-              + '<div class="cat-t">' + title + '</div>'
-              + '<div class="cat-m">' + dur + 's &middot; ' + pcs + ' pcs &middot; ' + mb + 'MB</div>'
-              + '<div class="cat-p">' + cost + ' sats</div>'
-              + '</a>';
-          }).join('');
-        })
-        .catch(() => {
-          el.innerHTML = '<div class="cat-loading">Server unreachable.</div>';
-        });
-    })();
+  <script type="module">
+    // Pull the most recent funded productions straight from the
+    // Hetzner Supabase so the landing page reflects real mainnet
+    // state, not a mocked catalogue. The productions.html page has
+    // the full gallery; this section on the landing page is a
+    // 3-row teaser linking through.
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
+    const SUPABASE_URL = 'https://api.b0ase.com';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0aHBlZHl3Z3dweWdyZnFsaXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1NTMwODMsImV4cCI6MjA2NjEyOTA4M30.2ud57kHQQ7l8c737t5lDeJkhsOeQSed4MIR42PnzRAg';
+    const el = document.getElementById('cat-list');
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+    const fmt = n => (Number(n) || 0).toLocaleString();
+
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data } = await supabase
+        .from('bct_offers')
+        .select('id, title, token_ticker, raised_sats, status, bct_artifacts(url, kind, payment_txid)')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (!data || !data.length) {
+        el.innerHTML = '<div class="cat-loading">Swarm has not posted any productions yet.</div>';
+      } else {
+        el.innerHTML = data.map(o => {
+          const tx = (o.bct_artifacts && o.bct_artifacts[0] && o.bct_artifacts[0].payment_txid) || '';
+          return '<a href="productions.html" class="cat-row">'
+            + '<div class="cat-t">' + esc(o.title) + '</div>'
+            + '<div class="cat-m">$' + esc(o.token_ticker) + ' &middot; ' + esc(o.status) + (tx ? ' &middot; tx ' + esc(tx.slice(0,10)) + '&hellip;' : '') + '</div>'
+            + '<div class="cat-p">' + fmt(o.raised_sats) + ' sats</div>'
+            + '</a>';
+        }).join('');
+      }
+    } catch (err) {
+      console.error(err);
+      el.innerHTML = '<div class="cat-loading">Registry unreachable.</div>';
+    }
   </script>
 </body>
 </html>
