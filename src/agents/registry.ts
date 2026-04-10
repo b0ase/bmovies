@@ -22,6 +22,21 @@ export interface OfferSubscription {
   ts: number;
 }
 
+export interface ProductionArtifact {
+  /** What kind of content was generated */
+  kind: 'image' | 'video' | 'text';
+  /** URL (or other identifier) pointing at the generated content */
+  url: string;
+  /** Model that produced it, e.g. "flux-1" or "wan-2.1" */
+  model: string;
+  /** Prompt used */
+  prompt: string;
+  /** Txid of the BSV payment that paid for the generation */
+  paymentTxid: string;
+  /** Unix timestamp (ms) when the artifact was delivered */
+  createdAt: number;
+}
+
 export interface ProductionOffer {
   id: string;
   producerId: string;
@@ -35,6 +50,12 @@ export interface ProductionOffer {
   createdAt: number;
   /** Token ticker reserved for this production (e.g. SPLBRGX001) */
   tokenTicker: string;
+  /**
+   * The actual produced content once the offer transitions past
+   * 'producing'. Populated by the ProducerAgent's onOfferFunded
+   * hook after a successful BSVAPI generation call.
+   */
+  artifact?: ProductionArtifact;
 }
 
 export type NewOffer = Pick<
@@ -51,6 +72,10 @@ export interface AgentRegistry {
     sub: Omit<OfferSubscription, 'ts'>,
   ): ProductionOffer | null;
   updateStatus(offerId: string, status: OfferStatus): ProductionOffer | null;
+  attachArtifact(
+    offerId: string,
+    artifact: ProductionArtifact,
+  ): ProductionOffer | null;
 }
 
 export class MemoryRegistry implements AgentRegistry {
@@ -112,6 +137,16 @@ export class MemoryRegistry implements AgentRegistry {
     const offer = this.offers.get(offerId);
     if (!offer) return null;
     offer.status = status;
+    return offer;
+  }
+
+  attachArtifact(
+    offerId: string,
+    artifact: ProductionArtifact,
+  ): ProductionOffer | null {
+    const offer = this.offers.get(offerId);
+    if (!offer) return null;
+    offer.artifact = artifact;
     return offer;
   }
 }

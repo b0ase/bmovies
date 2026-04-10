@@ -30,6 +30,16 @@ export interface ProducerConfig {
    * agent log but do not crash the tick loop.
    */
   onOfferPosted?: (offer: ProductionOffer) => Promise<void>;
+  /**
+   * Optional async hook fired the first tick after an offer
+   * transitions from 'funded' to 'producing'. The live swarm plugs
+   * in a content-generation callback here that calls BSVAPI to
+   * actually produce the image or video the offer proposed. The
+   * hook should attach the returned artifact to the offer via
+   * registry.attachArtifact(offerId, artifact). Errors are logged
+   * to the agent log but do not crash the tick loop.
+   */
+  onOfferFunded?: (offer: ProductionOffer) => Promise<void>;
 }
 
 export class ProducerAgent extends Agent {
@@ -113,7 +123,7 @@ export class ProducerAgent extends Agent {
    * producing status.
    */
   async tick(): Promise<void> {
-    // Advance funded offers to producing state
+    // Advance funded offers to producing state and kick off content generation
     for (const offer of this.getMyOffers()) {
       if (offer.status === 'funded') {
         this.cfg.registry.updateStatus(offer.id, 'producing');
@@ -122,6 +132,17 @@ export class ProducerAgent extends Agent {
           message: `Offer ${offer.id} fully funded by ${offer.subscribers.length} financier(s); production begins`,
           data: { offerId: offer.id, raisedSats: offer.raisedSats },
         });
+
+        if (this.cfg.onOfferFunded) {
+          const hook = this.cfg.onOfferFunded;
+          void hook(offer).catch((err: unknown) => {
+            const message = err instanceof Error ? err.message : String(err);
+            this.record({
+              kind: 'error',
+              message: `onOfferFunded hook failed for ${offer.id}: ${message}`,
+            });
+          });
+        }
       }
     }
 

@@ -25,6 +25,8 @@
  *   --prime-txid HEX     prefer this txid's utxo when priming the pool
  *   --inflight N         concurrent broadcasts per loop (default 3)
  *   --max-offers N       max simultaneous open offers per producer (default 5)
+ *   --bsvapi URL         enable BSVAPI content generation via this base URL
+ *   --bsvapi-video-model M   which BSVAPI video model to use (default wan-2.1)
  */
 
 import Fastify from 'fastify';
@@ -71,6 +73,12 @@ async function main() {
       : undefined;
   const maxInflight = Number(flags.inflight ?? 3);
   const maxOpenOffers = Number(flags['max-offers'] ?? 5);
+  const bsvapiBaseUrl =
+    typeof flags.bsvapi === 'string' ? (flags.bsvapi as string) : undefined;
+  const bsvapiVideoModel =
+    typeof flags['bsvapi-video-model'] === 'string'
+      ? (flags['bsvapi-video-model'] as string)
+      : undefined;
 
   // Piece broadcaster selection.
   //   --arc                          → GorillaPool public ARC (no key needed)
@@ -128,6 +136,9 @@ async function main() {
     tickIntervalMs: 15_000,
     producerBudgetSats: 5_000,
     producerMaxOpenOffers: maxOpenOffers,
+    bsvapiBaseUrl,
+    bsvapiVideoModel,
+    bsvapiBroadcaster: pieceBroadcaster,
     productionIdeas: [
       'Star Wars Episode 1000',
       'The Last Piece',

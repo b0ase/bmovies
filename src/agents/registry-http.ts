@@ -23,6 +23,7 @@ import type {
   NewOffer,
   OfferStatus,
   OfferSubscription,
+  ProductionArtifact,
   ProductionOffer,
 } from './registry.js';
 import {
@@ -157,6 +158,20 @@ export class HttpRegistryClient implements AgentRegistry {
     // separate POST /api/agents/offers/:id/status endpoint — but
     // only the producer of the offer should call it. Deferred to
     // the streaming loop task where producer.tick drives it.
+    return offer;
+  }
+
+  attachArtifact(
+    offerId: string,
+    artifact: ProductionArtifact,
+  ): ProductionOffer | null {
+    const offer = this.cache.get(offerId);
+    if (!offer) return null;
+    offer.artifact = artifact;
+    // Artifact persistence is currently local-only. A future
+    // version will POST /api/agents/offers/:id/artifact with a
+    // signed record so other peers learn about the produced
+    // content too.
     return offer;
   }
 }

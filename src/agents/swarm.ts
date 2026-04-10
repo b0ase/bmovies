@@ -21,6 +21,8 @@ import type { AgentRegistry, ProductionOffer } from './registry.js';
 import { loadAgentConfig, type AgentConfigRecord } from './config.js';
 import { mintPresaleOnChain, type PresaleToken } from '../token/presale.js';
 import { subscribeOnChain, type SubscriptionReceipt } from './subscribe.js';
+import { BsvapiClient } from './bsvapi-client.js';
+import type { TxBroadcaster } from '../payment/broadcaster.js';
 
 export interface SwarmLogEntry {
   ts: number;
@@ -72,6 +74,20 @@ export interface BuildSwarmOptions {
    * generated; in production the live swarm always runs with live=true.
    */
   live?: boolean;
+  /**
+   * Optional BSVAPI base URL. When set AND live is true, the
+   * producer's onOfferFunded hook calls BSVAPI to generate real
+   * content (via Grok/Atlas/etc) for every funded offer and
+   * attaches the resulting artifact URL to the offer record.
+   */
+  bsvapiBaseUrl?: string;
+  /** BSVAPI model to use for content generation (defaults to "wan-2.1") */
+  bsvapiVideoModel?: string;
+  /**
+   * Optional broadcaster for BSVAPI payment txs. Typically the same
+   * ArcBroadcaster used by the streaming loop.
+   */
+  bsvapiBroadcaster?: TxBroadcaster;
   /** Tick interval in ms for every agent in the swarm */
   tickIntervalMs: number;
   /** Per-producer budget in sats */
@@ -100,6 +116,9 @@ export function buildSwarm(
 ): Swarm {
   const registry = opts.registry ?? new MemoryRegistry();
   const live = opts.live ?? true;
+  const bsvapiBaseUrl = opts.bsvapiBaseUrl;
+  const bsvapiVideoModel = opts.bsvapiVideoModel ?? 'wan-2.1';
+  const bsvapiBroadcaster = opts.bsvapiBroadcaster;
   const presales = new Map<string, PresaleToken>();
   const subscriptions: SubscriptionReceipt[] = [];
   const log: SwarmLogEntry[] = [];
@@ -127,6 +146,60 @@ export function buildSwarm(
         budgetSats: opts.producerBudgetSats,
         maxOpenOffers: opts.producerMaxOpenOffers,
         productionIdeas: opts.productionIdeas,
+        onOfferFunded:
+          live && bsvapiBaseUrl
+            ? async (offer) => {
+                const client = new BsvapiClient({
+                  baseUrl: bsvapiBaseUrl,
+                  wallet,
+                  broadcaster: bsvapiBroadcaster,
+                });
+                try {
+                  const res = await client.generateVideo<{
+                    url?: string;
+                    video_url?: string;
+                    output?: string;
+                  }>({
+                    model: bsvapiVideoModel,
+                    prompt: `${offer.title}. ${offer.synopsis}`,
+                    duration_seconds: 4,
+                    aspect_ratio: '16:9',
+                  });
+                  const url =
+                    res.body.url ??
+                    res.body.video_url ??
+                    res.body.output ??
+                    '';
+                  if (!url) {
+                    throw new Error(
+                      'BSVAPI response did not include a content URL',
+                    );
+                  }
+                  registry.attachArtifact(offer.id, {
+                    kind: 'video',
+                    url,
+                    model: bsvapiVideoModel,
+                    prompt: offer.title,
+                    paymentTxid: res.paymentTxid,
+                    createdAt: Date.now(),
+                  });
+                  swarmLog({
+                    kind: 'tx',
+                    agentId: rec.id,
+                    message: `Generated video for ${offer.id} via BSVAPI (${bsvapiVideoModel}) — ${url}`,
+                    txid: res.paymentTxid,
+                  });
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  swarmLog({
+                    kind: 'error',
+                    agentId: rec.id,
+                    message: `BSVAPI content generation failed for ${offer.id}: ${msg}`,
+                  });
+                  throw err;
+                }
+              }
+            : undefined,
         onOfferPosted: live
           ? async (offer) => {
               try {
