@@ -113,6 +113,42 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     .status.open { background: #eee; color: #000; }
     .status.funded { background: #000; color: #fff; }
     .status.producing { background: #000; color: #fff; }
+    .status.released { background: #000; color: #fff; }
+
+    /* Productions grid — funded offers that have a generated artifact */
+    .productions {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .production {
+      border: 1px solid #000; padding: 0; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .production .media {
+      width: 100%; aspect-ratio: 16 / 9; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      color: #666; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .production .media video,
+    .production .media img {
+      width: 100%; height: 100%; object-fit: cover; background: #000;
+    }
+    .production .meta {
+      padding: 0.8rem 1rem; border-top: 1px solid #000;
+    }
+    .production .meta .t {
+      font-size: 0.85rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em; line-height: 1.1;
+    }
+    .production .meta .sub {
+      font-size: 0.55rem; color: #999; margin-top: 0.3rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .production .meta a {
+      font-size: 0.55rem; color: #000; text-decoration: none;
+      border-bottom: 1px solid #000; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
     .log {
       max-height: 320px; overflow-y: auto; font-size: 0.7rem;
       font-family: 'SF Mono', Monaco, monospace;
@@ -156,6 +192,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
   </section>
 
   <section>
+    <h2>Productions</h2>
+    <div class="productions" id="productions-body"></div>
+  </section>
+
+  <section>
     <h2>Open offers</h2>
     <table id="offers-table">
       <thead><tr>
@@ -183,6 +224,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
         const snap = await res.json();
         renderCounters(snap);
         renderAgents(snap.agents);
+        renderProductions(snap.productions || []);
         renderOffers(snap.openOffers);
         renderLog(snap.recentLog);
       } catch (err) {
@@ -196,6 +238,43 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       document.getElementById('c-sats').textContent = fmt(c?.totalSatsDistributed);
       document.getElementById('c-streams').textContent = fmt(c?.activeStreams);
       document.getElementById('c-presales').textContent = fmt(snap.presaleCount);
+    }
+
+    function renderProductions(productions) {
+      const el = document.getElementById('productions-body');
+      if (!productions.length) {
+        el.innerHTML = '<div style="color:#999;font-size:0.7rem;padding:2rem 0;text-align:center;grid-column:1 / -1;">No productions yet. When an offer funds, its generated video will appear here.</div>';
+        return;
+      }
+      el.innerHTML = productions.map((p) => {
+        const artifact = p.artifact;
+        let media;
+        if (artifact && artifact.kind === 'video') {
+          media = '<video muted loop autoplay playsinline src="' + esc(artifact.url) + '"></video>';
+        } else if (artifact && artifact.kind === 'image') {
+          media = '<img src="' + esc(artifact.url) + '" alt="' + esc(p.title) + '" />';
+        } else if (p.status === 'producing') {
+          media = '<span>Producing&hellip;</span>';
+        } else {
+          media = '<span>' + esc(p.status) + '</span>';
+        }
+        const holders = p.subscribers ? p.subscribers.length : 0;
+        const sub =
+          '$' + esc(p.tokenTicker) + ' &middot; ' +
+          holders + ' holder' + (holders === 1 ? '' : 's') + ' &middot; ' +
+          fmt(p.raisedSats) + ' sats';
+        const link = artifact
+          ? '<div style="margin-top:0.5rem"><a href="' + esc(artifact.url) + '" target="_blank" rel="noopener">Open content &rarr;</a></div>'
+          : '';
+        return '<div class="production">' +
+          '<div class="media">' + media + '</div>' +
+          '<div class="meta">' +
+          '<div class="t">' + esc(p.title) + '</div>' +
+          '<div class="sub">' + sub + '</div>' +
+          link +
+          '</div>' +
+          '</div>';
+      }).join('');
     }
 
     function renderAgents(agents) {

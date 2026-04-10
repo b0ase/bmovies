@@ -58,6 +58,13 @@ export interface SwarmSnapshot {
     logCount: number;
   }>;
   openOffers: ProductionOffer[];
+  /**
+   * Offers that have progressed past 'open' — either funded,
+   * currently producing (BSVAPI call in flight), or released
+   * with an artifact attached. The dashboard uses this to
+   * render the "Productions" grid.
+   */
+  productions: ProductionOffer[];
   presaleCount: number;
   subscriptionCount: number;
   recentLog: SwarmLogEntry[];
@@ -295,6 +302,18 @@ export function buildSwarm(
       });
     },
     snapshot() {
+      // Aggregate every offer a producer has posted, so the
+      // snapshot can report both open offers and in-progress
+      // productions. Producers track their own offers locally;
+      // the registry listOpenOffers() only exposes 'open' ones.
+      const productions: ProductionOffer[] = [];
+      for (const p of producers) {
+        for (const offer of p.getMyOffers()) {
+          if (offer.status !== 'open') productions.push(offer);
+        }
+      }
+      productions.sort((a, b) => b.createdAt - a.createdAt);
+
       return {
         agents: builtAgents.map((a) => ({
           id: a.identity.id,
@@ -305,6 +324,7 @@ export function buildSwarm(
           logCount: a.logCount,
         })),
         openOffers: registry.listOpenOffers(),
+        productions,
         presaleCount: presales.size,
         subscriptionCount: subscriptions.length,
         recentLog: log.slice(-20).reverse(),
