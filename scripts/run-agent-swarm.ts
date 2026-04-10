@@ -26,7 +26,7 @@
  *   --inflight N         concurrent broadcasts per loop (default 3)
  *   --max-offers N       max simultaneous open offers per producer (default 5)
  *   --bsvapi URL         enable BSVAPI content generation via this base URL
- *   --bsvapi-video-model M   which BSVAPI video model to use (default wan-2.1)
+ *   --bsvapi-image-model M   which BSVAPI image model to use (default z-image/turbo)
  */
 
 import Fastify from 'fastify';
@@ -75,9 +75,9 @@ async function main() {
   const maxOpenOffers = Number(flags['max-offers'] ?? 5);
   const bsvapiBaseUrl =
     typeof flags.bsvapi === 'string' ? (flags.bsvapi as string) : undefined;
-  const bsvapiVideoModel =
-    typeof flags['bsvapi-video-model'] === 'string'
-      ? (flags['bsvapi-video-model'] as string)
+  const bsvapiImageModel =
+    typeof flags['bsvapi-image-model'] === 'string'
+      ? (flags['bsvapi-image-model'] as string)
       : undefined;
 
   // Piece broadcaster selection.
@@ -137,7 +137,7 @@ async function main() {
     producerBudgetSats: 5_000,
     producerMaxOpenOffers: maxOpenOffers,
     bsvapiBaseUrl,
-    bsvapiVideoModel,
+    bsvapiImageModel,
     bsvapiBroadcaster: pieceBroadcaster,
     productionIdeas: [
       'Star Wars Episode 1000',

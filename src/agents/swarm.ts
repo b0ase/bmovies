@@ -84,12 +84,16 @@ export interface BuildSwarmOptions {
   /**
    * Optional BSVAPI base URL. When set AND live is true, the
    * producer's onOfferFunded hook calls BSVAPI to generate real
-   * content (via Grok/Atlas/etc) for every funded offer and
+   * content (via AtlasCloud) for every funded offer and
    * attaches the resulting artifact URL to the offer record.
    */
   bsvapiBaseUrl?: string;
-  /** BSVAPI model to use for content generation (defaults to "wan-2.1") */
-  bsvapiVideoModel?: string;
+  /**
+   * BSVAPI image model to use for content generation.
+   * Defaults to the cheapest working AtlasCloud model, z-image/turbo
+   * ($0.01/image, ~10s sync latency).
+   */
+  bsvapiImageModel?: string;
   /**
    * Optional broadcaster for BSVAPI payment txs. Typically the same
    * ArcBroadcaster used by the streaming loop.
@@ -124,7 +128,7 @@ export function buildSwarm(
   const registry = opts.registry ?? new MemoryRegistry();
   const live = opts.live ?? true;
   const bsvapiBaseUrl = opts.bsvapiBaseUrl;
-  const bsvapiVideoModel = opts.bsvapiVideoModel ?? 'wan-2.1';
+  const bsvapiImageModel = opts.bsvapiImageModel ?? 'z-image/turbo';
   const bsvapiBroadcaster = opts.bsvapiBroadcaster;
   const presales = new Map<string, PresaleToken>();
   const subscriptions: SubscriptionReceipt[] = [];
@@ -162,20 +166,18 @@ export function buildSwarm(
                   broadcaster: bsvapiBroadcaster,
                 });
                 try {
-                  const res = await client.generateVideo<{
+                  const res = await client.generateImage<{
                     url?: string;
-                    video_url?: string;
                     output?: string;
+                    outputs?: string[];
                   }>({
-                    model: bsvapiVideoModel,
+                    model: bsvapiImageModel,
                     prompt: `${offer.title}. ${offer.synopsis}`,
-                    duration_seconds: 4,
-                    aspect_ratio: '16:9',
                   });
                   const url =
                     res.body.url ??
-                    res.body.video_url ??
                     res.body.output ??
+                    (Array.isArray(res.body.outputs) && res.body.outputs[0]) ||
                     '';
                   if (!url) {
                     throw new Error(
@@ -183,9 +185,9 @@ export function buildSwarm(
                     );
                   }
                   registry.attachArtifact(offer.id, {
-                    kind: 'video',
+                    kind: 'image',
                     url,
-                    model: bsvapiVideoModel,
+                    model: bsvapiImageModel,
                     prompt: offer.title,
                     paymentTxid: res.paymentTxid,
                     createdAt: Date.now(),
@@ -193,7 +195,7 @@ export function buildSwarm(
                   swarmLog({
                     kind: 'tx',
                     agentId: rec.id,
-                    message: `Generated video for ${offer.id} via BSVAPI (${bsvapiVideoModel}) — ${url}`,
+                    message: `Generated image for ${offer.id} via BSVAPI (${bsvapiImageModel}) — ${url}`,
                     txid: res.paymentTxid,
                   });
                 } catch (err) {
