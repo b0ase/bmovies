@@ -81,10 +81,14 @@
     @media (max-width: 520px) {
       .steps { grid-template-columns: 1fr; }
     }
+    .step {
+      border: 2px solid #000; padding: 1.5rem 1.6rem;
+      display: flex; flex-direction: column;
+    }
     .step .step-head {
-      font-size: 2rem; font-weight: 900; text-transform: uppercase;
+      font-size: 1.8rem; font-weight: 900; text-transform: uppercase;
       letter-spacing: -0.03em; line-height: 0.9;
-      padding-bottom: 0.6rem; border-bottom: 2px solid #000;
+      padding-bottom: 0.7rem; border-bottom: 2px solid #000;
       margin-bottom: 0.8rem;
     }
     .step .n {
