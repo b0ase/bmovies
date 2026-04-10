@@ -54,7 +54,7 @@ function buildInscriptionScript(data: Buffer): Script {
   const ordTag = Buffer.from('ord', 'utf-8');
 
   // Build: OP_FALSE OP_RETURN "ord" <content-type-length> <content-type> <data-length> <data>
-  const chunks = [
+  const bytes = [
     0x00,                    // OP_FALSE
     0x6a,                    // OP_RETURN
     ...pushData(ordTag),
@@ -64,7 +64,10 @@ function buildInscriptionScript(data: Buffer): Script {
     ...pushData(data),
   ];
 
-  return new Script(chunks);
+  // @bsv/sdk v2: `new Script(numArray)` does not parse raw bytes.
+  // Use Script.fromBinary so chunks are decoded correctly. The old
+  // form silently produced an empty script.
+  return Script.fromBinary(bytes);
 }
 
 /** Build push data opcodes */
