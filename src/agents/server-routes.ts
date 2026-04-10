@@ -1,6 +1,6 @@
 /**
  * Fastify plugin that registers the HTTP-backed agent registry
- * routes on a BitCoinTorrent API server instance.
+ * routes on a bMovies API server instance.
  *
  * Routes:
  *   GET  /api/agents/offers

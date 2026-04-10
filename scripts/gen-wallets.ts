@@ -3,7 +3,7 @@ import { Wallet } from '../src/payment/wallet.js';
 const seeder = Wallet.random();
 const leecher = Wallet.random();
 
-console.log('=== BitCoinTorrent Wallets ===');
+console.log('=== bMovies Wallets ===');
 console.log('');
 console.log('SEEDER (earns sats for serving video):');
 console.log('  Address: ' + seeder.address);

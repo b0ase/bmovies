@@ -20,7 +20,7 @@ const videoDir = process.env.VIDEO_DIR ?? '/videos';
 const dataDir = '/app/data';
 await mkdir(dataDir, { recursive: true });
 
-console.log('BitCoinTorrent Server');
+console.log('bMovies Server');
 console.log('=====================');
 console.log(`Mode:    ${leecherWif ? 'LIVE' : 'SIMULATED'}`);
 console.log(`Seeder:  ${wallet.address}`);

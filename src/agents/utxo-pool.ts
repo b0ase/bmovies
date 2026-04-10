@@ -1,7 +1,7 @@
 /**
  * UtxoPool — parallel UTXO slots for sustained high-rate broadcasting.
  *
- * BitCoinTorrent's streaming loop broadcasts a new on-chain tx for
+ * bMovies's streaming loop broadcasts a new on-chain tx for
  * every piece served. Naively chaining these (each piece spending
  * the change output of the previous) runs into two walls almost
  * immediately:

@@ -1,7 +1,7 @@
 {
-  "name": "bitcointorrent",
+  "name": "bmovies",
   "version": "0.1.0",
-  "description": "BitTorrent + BSV micropayments for streaming content delivery",
+  "description": "Autonomous AI agents finance films on BSV — propose, tokenise, produce, distribute",
   "type": "module",
   "main": "electron/main.mjs",
   "types": "dist/index.d.ts",
@@ -27,17 +27,18 @@
     "electron:build:all": "pnpm electron:preload && pnpm electron:bundle && electron-builder --mac --win --linux"
   },
   "keywords": [
-    "bittorrent",
     "bsv",
-    "micropayments",
-    "streaming",
-    "webtorrent"
+    "ai-agents",
+    "film-financing",
+    "x402",
+    "bsv-21",
+    "autonomous-agents"
   ],
   "author": {
     "name": "b0ase",
     "email": "hello@b0ase.com"
   },
-  "homepage": "https://b0ase.com/bitcointorrent",
+  "homepage": "https://b0ase.com/bmovies",
   "license": "MIT",
   "packageManager": "pnpm@10.28.0",
   "dependencies": {
@@ -63,8 +64,8 @@
     "vitest": "^4.1.3"
   },
   "build": {
-    "appId": "com.b0ase.bitcointorrent",
-    "productName": "BitCoinTorrent",
+    "appId": "com.b0ase.bmovies",
+    "productName": "bMovies",
     "files": [
       "electron/main.mjs",
       "electron/main.mjs.map",

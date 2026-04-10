@@ -1,5 +1,5 @@
 /**
- * BitCoinTorrent — Electron Main Process
+ * bMovies — Electron Main Process
  *
  * Runs the seeder, payment channels, and API server in the background.
  * System tray shows earnings. Window shows the catalog + player UI.
@@ -57,7 +57,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
-    title: 'BitCoinTorrent',
+    title: 'bMovies',
     backgroundColor: '#0a0a0a',
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
@@ -85,7 +85,7 @@ function createTray() {
   );
 
   tray = new Tray(icon);
-  tray.setToolTip('BitCoinTorrent — Seeding');
+  tray.setToolTip('bMovies — Seeding');
 
   updateTrayMenu();
 
@@ -104,7 +104,7 @@ function updateTrayMenu() {
   const peers = status?.totalPeers ?? 0;
 
   const menu = Menu.buildFromTemplate([
-    { label: `BitCoinTorrent`, enabled: false },
+    { label: `bMovies`, enabled: false },
     { type: 'separator' },
     { label: `Seeding: ${content} video(s)`, enabled: false },
     { label: `Peers: ${peers}`, enabled: false },

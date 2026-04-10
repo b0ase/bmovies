@@ -67,7 +67,7 @@ These are different problems with different solutions.
 ## Proof of Indexing: Ensuring Nodes Agree on the Snapshot
 
 ### What it is
-Every BitCoinTorrent node independently indexes BSV-21 token transfers by scanning the blockchain. From this, they compute a holder table:
+Every bMovies node independently indexes BSV-21 token transfers by scanning the blockchain. From this, they compute a holder table:
 
 ```
 Token: $EMPRESS (tokenId: abc123_0)

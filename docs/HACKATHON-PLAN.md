@@ -1,4 +1,4 @@
-# BitCoinTorrent — BSVA Open Run Agentic Pay Plan
+# bMovies — BSVA Open Run Agentic Pay Plan
 
 > Target event: **Open Run Agentic Pay** (BSV Association)
 > Hacking window: **2026-04-06 → 2026-04-17 23:59 UTC**
@@ -7,7 +7,7 @@
 
 ## 1. The Pitch
 
-BitCoinTorrent is a BSV-native demonstration of **Propose → Tokenise → Agentic finance → Auto-produce → GTM**. Autonomous AI agents each hold their own BSV wallet. A *producer* agent proposes a video production, mints a BSV-21 financing token up front, and posts an open call. *Financier* agents autonomously discover the call via BRC-100 identity + MessageBox, evaluate it against their investment thesis, and subscribe by sending BSV on-chain. When the budget is raised the production enters an autonomous streaming loop; every piece served is a micropayment and every settlement fans out royalties on-chain to the token holders who financed the production.
+bMovies is a BSV-native demonstration of **Propose → Tokenise → Agentic finance → Auto-produce → GTM**. Autonomous AI agents each hold their own BSV wallet. A *producer* agent proposes a video production, mints a BSV-21 financing token up front, and posts an open call. *Financier* agents autonomously discover the call via BRC-100 identity + MessageBox, evaluate it against their investment thesis, and subscribe by sending BSV on-chain. When the budget is raised the production enters an autonomous streaming loop; every piece served is a micropayment and every settlement fans out royalties on-chain to the token holders who financed the production.
 
 The "real-world problem" framing: **pre-production film financing is catastrophically broken.** Studios gatekeep, indies can't raise, audiences don't get what they want. This demo shows what it looks like when AI agents, not humans, run the whole pipeline.
 
@@ -183,8 +183,8 @@ docs/
 
 If the BSVA reply rules the April-8-first-commit repo ineligible as "too much prior infrastructure":
 
-- Plan B1: fork this repo into a new `bitcointorrent-hackathon` repo on April 11, keep only `src/agents/`, `src/types/`, `src/payment/wallet.ts`, and rebuild the rest as thin wrappers. The agent layer stays, the rest is rewritten under the new repo's history.
-- Plan B2: move the agent submission into a new standalone repo and have BitCoinTorrent referenced as a platform dependency rather than the submission itself.
+- Plan B1: fork this repo into a new `bmovies-hackathon` repo on April 11, keep only `src/agents/`, `src/types/`, `src/payment/wallet.ts`, and rebuild the rest as thin wrappers. The agent layer stays, the rest is rewritten under the new repo's history.
+- Plan B2: move the agent submission into a new standalone repo and have bMovies referenced as a platform dependency rather than the submission itself.
 - Plan B3: accept non-submission but still run the swarm as a showcase and publish the post-mortem as a blog post. Exposure without a prize.
 
 ## 10. Risks and Mitigations
@@ -200,7 +200,7 @@ If the BSVA reply rules the April-8-first-commit repo ineligible as "too much pr
 ## 11. Decision Log
 
 - **2026-04-10**: Pivot from general-purpose streaming to BSVA Agentic Pay submission. Target is autonomous agent financing, not human-initiated streaming.
-- **2026-04-10**: Submit as **BitCoinTorrent**, not NPGX. This repo started April 8 so it is credibly green-field. NPGX is cited as reference architecture only.
+- **2026-04-10**: Submit as **bMovies**, not NPGX. This repo started April 8 so it is credibly green-field. NPGX is cited as reference architecture only.
 - **2026-04-10**: ClawDex is used as UX reference for the registry `/launch` three-asset pattern but not imported.
 - **2026-04-10**: Real on-chain TXs only. No simulated mode. User funds 4 agent wallets with ~$1 each.
 - **2026-04-10**: Agent layer is new-built in `src/agents/`; existing `src/payment/` and `src/token/` are reused verbatim where possible.

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-contextBridge.exposeInMainWorld('bitcointorrent', {
+contextBridge.exposeInMainWorld('bmovies', {
   isElectron: true,
   getConfig: () => ipcRenderer.invoke('get-config'),
   getStatus: () => ipcRenderer.invoke('get-status'),

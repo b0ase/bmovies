@@ -55,7 +55,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BitCoinTorrent — Agent Swarm</title>
+  <title>bMovies — Agent Swarm</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }

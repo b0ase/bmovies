@@ -39,7 +39,7 @@ const isLive = !!leecherWif;
 const dataDir = join(process.cwd(), 'data');
 await mkdir(dataDir, { recursive: true });
 
-console.log('BitCoinTorrent Multi-Seeder');
+console.log('bMovies Multi-Seeder');
 console.log('==========================');
 console.log(`Mode:    ${isLive ? 'LIVE (real BSV mainnet)' : 'SIMULATED (real crypto, no broadcast)'}`);
 console.log(`Seeder:  ${wallet.address}`);

@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BitCoinTorrent — Technical Report</title>
-  <meta name="description" content="Technical report for BitCoinTorrent: an autonomous agent swarm that proposes productions, raises BSV financing on-chain, pays for real AI content generation via an x402 gateway, and distributes royalties to token holders." />
-  <link rel="icon" type="image/png" href="bitcointorrent_OG.png" />
+  <title>bMovies — Technical Report</title>
+  <meta name="description" content="Technical report for bMovies: an autonomous agent swarm that proposes productions, raises BSV financing on-chain, pays for real AI content generation via an x402 gateway, and distributes royalties to token holders." />
+  <link rel="icon" type="image/png" href="bmovies_OG.png" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://bitcointorrent.online/BitCoinTorrent-Report.html" />
-  <meta property="og:title" content="BitCoinTorrent — Technical Report" />
+  <meta property="og:url" content="https://bmovies.online/bMovies-Report.html" />
+  <meta property="og:title" content="bMovies — Technical Report" />
   <meta property="og:description" content="How the swarm proposes, finances, produces, and distributes content on BSV mainnet. With measured numbers from live runs." />
-  <meta property="og:image" content="https://bitcointorrent.online/bitcointorrent_OG.png" />
+  <meta property="og:image" content="https://bmovies.online/bmovies_OG.png" />
   <meta property="og:image:width" content="1300" />
   <meta property="og:image:height" content="655" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="BitCoinTorrent — Technical Report" />
+  <meta name="twitter:title" content="bMovies — Technical Report" />
   <meta name="twitter:description" content="How the swarm proposes, finances, produces, and distributes content on BSV mainnet." />
-  <meta name="twitter:image" content="https://bitcointorrent.online/bitcointorrent_OG.png" />
+  <meta name="twitter:image" content="https://bmovies.online/bmovies_OG.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -320,7 +320,7 @@
 <body>
 
   <header>
-    <h1>BITCOINTORRENT</h1>
+    <h1>BMOVIES</h1>
     <div class="tagline">Technical report &mdash; April 2026</div>
   </header>
 
@@ -329,8 +329,8 @@
     <a href="app.html">Stream</a>
     <a href="tokenize.html">Tokenize</a>
     <a href="productions.html">Productions</a>
-    <a href="BitCoinTorrent-Report.html" class="active">Report</a>
-    <a href="https://github.com/b0ase/BitCoinTorrent">GitHub</a>
+    <a href="bMovies-Report.html" class="active">Report</a>
+    <a href="https://github.com/b0ase/bMovies">GitHub</a>
   </nav>
 
   <main>
@@ -338,15 +338,16 @@
     <!-- ─── ABSTRACT ──────────────────────────────────────── -->
     <section>
       <div class="eyebrow">Abstract</div>
-      <div class="display">Autonomous AI<br>agents finance<br>content on-chain.</div>
+      <div class="display">Films financed<br>before they<br>exist.</div>
       <p class="lead">
-        BitCoinTorrent is a working swarm of autonomous AI agents that propose
-        productions, sell BSV-21 financing tokens to each other on-chain, spend
-        the raised capital on real AI content generation through an x402 payment
-        gateway, and distribute streaming royalties back to token holders per
-        piece served. Every transaction on this report is a real BSV mainnet
-        transaction. There is no custody layer, no platform cut, and no human in
-        the middle of any individual production decision.
+        bMovies is a live swarm of autonomous AI agents that propose films,
+        raise production capital by selling BSV-21 financing tokens on-chain,
+        commission real content from AI studios through an x402 payment gateway,
+        and stream the finished work to viewers &mdash; distributing royalties
+        back to every token holder, piece by piece. Every transaction on this
+        report is a real BSV mainnet transaction. There is no custody layer,
+        no platform cut, and no human in the middle of any individual
+        production decision.
       </p>
 
       <div class="metric-grid">
@@ -362,7 +363,7 @@
       <div class="eyebrow">The Model</div>
       <h2>Propose. Finance. Produce. Distribute.</h2>
       <p class="lead">
-        Every production in BitCoinTorrent follows the same four-stage pipeline.
+        Every production in bMovies follows the same four-stage pipeline.
         Each stage is executed by an autonomous agent and settled on Bitcoin SV
         mainnet. The same pattern scales from a single image generation to a
         full video production.
@@ -444,7 +445,7 @@
 
       <div class="split">
         <div>
-          <h3>BitCoinTorrent agent layer</h3>
+          <h3>bMovies agent layer</h3>
           <p class="small">
             <strong>Agent base class</strong> with wallet, identity, persona, and
             tick loop. Typed subclasses ProducerAgent and FinancierAgent drive
@@ -676,7 +677,7 @@ CREATE TABLE bct_artifacts (
       <h2>Pre-production film financing is broken.</h2>
       <p>
         Studios gatekeep, indies can't raise, audiences don't get what they
-        want. BitCoinTorrent demonstrates a pipeline where none of those
+        want. bMovies demonstrates a pipeline where none of those
         constraints apply: an AI agent proposes a production, peer agents
         evaluate and finance it on-chain in seconds, the content is commissioned
         from real upstream AI providers, and revenue flows back to the
@@ -729,9 +730,9 @@ CREATE TABLE bct_artifacts (
 
       <table>
         <tbody>
-          <tr><td>Source code</td><td><a href="https://github.com/b0ase/BitCoinTorrent" style="color:#000; font-weight:700; border-bottom:1px solid #000;">github.com/b0ase/BitCoinTorrent</a></td></tr>
+          <tr><td>Source code</td><td><a href="https://github.com/b0ase/bMovies" style="color:#000; font-weight:700; border-bottom:1px solid #000;">github.com/b0ase/bMovies</a></td></tr>
           <tr><td>BSVAPI gateway</td><td><a href="https://github.com/b0ase/bsvapi" style="color:#000; font-weight:700; border-bottom:1px solid #000;">github.com/b0ase/bsvapi</a></td></tr>
-          <tr><td>Public viewer</td><td><a href="productions.html" style="color:#000; font-weight:700; border-bottom:1px solid #000;">bitcointorrent.online/productions.html</a></td></tr>
+          <tr><td>Public viewer</td><td><a href="productions.html" style="color:#000; font-weight:700; border-bottom:1px solid #000;">bmovies.online/productions.html</a></td></tr>
           <tr><td>Live BSVAPI</td><td><a href="https://www.bsvapi.com" style="color:#000; font-weight:700; border-bottom:1px solid #000;">bsvapi.com</a></td></tr>
           <tr><td>Database</td><td>Hetzner Supabase (PostgREST public read, service-role write)</td></tr>
           <tr><td>Broadcaster</td><td>GorillaPool ARC (https://arc.gorillapool.io), anonymous endpoint</td></tr>
@@ -742,8 +743,8 @@ CREATE TABLE bct_artifacts (
   </main>
 
   <footer>
-    BitCoinTorrent technical report &middot; April 2026 &middot;
-    <a href="https://github.com/b0ase/BitCoinTorrent">source on GitHub</a>
+    bMovies technical report &middot; April 2026 &middot;
+    <a href="https://github.com/b0ase/bMovies">source on GitHub</a>
   </footer>
 
 </body>

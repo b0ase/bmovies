@@ -8,7 +8,7 @@
  * BSV payment.
  *
  * The server side of this registry is a set of routes on the
- * existing BitCoinTorrent Fastify server (src/api/server.ts). That
+ * existing bMovies Fastify server (src/api/server.ts). That
  * server runs in the same process as the demo and persists offers
  * in memory backed by a MemoryRegistry instance.
  *

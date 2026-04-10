@@ -41,7 +41,7 @@ const creatorAddress = values.creator ?? wallet.address;
 const dataDir = join(process.cwd(), 'data');
 await mkdir(dataDir, { recursive: true });
 
-console.log('BitCoinTorrent Seeder');
+console.log('bMovies Seeder');
 console.log('====================');
 console.log(`Video:    ${videoPath}`);
 console.log(`Title:    ${values.title}`);

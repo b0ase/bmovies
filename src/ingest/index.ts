@@ -40,7 +40,7 @@ export interface FullIngestResult extends IngestResult {
 }
 
 /**
- * Ingest a video file into the BitCoinTorrent system.
+ * Ingest a video file into the bMovies system.
  *
  * Pipeline:
  * 1. ffmpeg: MP4 → fMP4

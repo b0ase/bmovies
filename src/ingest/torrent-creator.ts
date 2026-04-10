@@ -1,5 +1,5 @@
 /**
- * Torrent file creator for BitCoinTorrent.
+ * Torrent file creator for bMovies.
  *
  * Creates a .torrent file from an fMP4 file using create-torrent,
  * with BCT metadata embedded in the info dict.
@@ -60,8 +60,8 @@ export async function createTorrentFile(
     name: opts.name,
     pieceLength,
     announceList,
-    createdBy: 'BitCoinTorrent/0.1.0',
-    comment: 'BitCoinTorrent — P2P streaming with BSV micropayments',
+    createdBy: 'bMovies/0.1.0',
+    comment: 'bMovies — P2P streaming with BSV micropayments',
     // Embed BCT metadata in the info dict
     info: {
       'bct-version': 1,

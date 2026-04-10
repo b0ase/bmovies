@@ -1,4 +1,4 @@
--- BitCoinTorrent persistent registry schema
+-- bMovies persistent registry schema
 --
 -- Runs against the existing self-hosted Supabase on Hetzner. Safe
 -- to re-apply because every statement uses IF NOT EXISTS. Apply with:

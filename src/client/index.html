@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BitCoinTorrent</title>
+  <title>bMovies</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -415,14 +415,14 @@
   </aside>
 
   <header>
-    <h1>BITCOINTORRENT</h1>
+    <h1>BMOVIES</h1>
     <div class="tagline">Peer-to-peer streaming &mdash; BSV micropayments</div>
     <nav style="display:flex;gap:0;margin-top:1rem;border-top:1px solid #eee;padding-top:0.5rem;">
-      <a href="https://www.bitcointorrent.online/" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Home</a>
-      <a href="https://www.bitcointorrent.online/app.html" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Web App</a>
-      <a href="https://www.bitcointorrent.online/tokenize.html" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Tokenize</a>
-      <a href="https://github.com/b0ase/BitCoinTorrent" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">GitHub</a>
-      <a href="https://github.com/b0ase/BitCoinTorrent/releases" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Download</a>
+      <a href="https://www.bmovies.online/" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Home</a>
+      <a href="https://www.bmovies.online/app.html" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Web App</a>
+      <a href="https://www.bmovies.online/tokenize.html" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Tokenize</a>
+      <a href="https://github.com/b0ase/bMovies" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">GitHub</a>
+      <a href="https://github.com/b0ase/bMovies/releases" style="font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#bbb;text-decoration:none;padding:0.3rem 0.8rem;">Download</a>
     </nav>
   </header>
 
@@ -575,8 +575,8 @@
       // Fetch tokens (Electron IPC or server API)
       let tokens = {};
       try {
-        if (window.bitcointorrent?.getTokens) {
-          tokens = await window.bitcointorrent.getTokens() || {};
+        if (window.bmovies?.getTokens) {
+          tokens = await window.bmovies.getTokens() || {};
         } else {
           const tokRes = await fetch(`${API}/api/tokens`);
           tokens = await tokRes.json();
@@ -826,16 +826,16 @@
     setInterval(loadCatalog, 15000);
     setInterval(loadWallet, 30000);
 
-    if (window.bitcointorrent?.isElectron) {
+    if (window.bmovies?.isElectron) {
       document.body.classList.add('electron');
       loadSidebar();
     }
 
     // ─── Add Content ────────────────────────────────
     function addContent() {
-      if (window.bitcointorrent?.addVideos) {
+      if (window.bmovies?.addVideos) {
         // Electron: native file picker
-        window.bitcointorrent.addVideos().then(() => loadCatalog());
+        window.bmovies.addVideos().then(() => loadCatalog());
         return;
       }
 
@@ -896,9 +896,9 @@
     ));
 
     async function loadSidebar() {
-      if (!window.bitcointorrent?.listMedia) return;
+      if (!window.bmovies?.listMedia) return;
       document.getElementById('sb-count').textContent = 'Scanning…';
-      allMediaFiles = await window.bitcointorrent.listMedia();
+      allMediaFiles = await window.bmovies.listMedia();
       renderSidebar();
     }
 
@@ -941,11 +941,11 @@
     }
 
     async function handleSidebarFileClick(file, row) {
-      if (!window.bitcointorrent?.ingestFile) return;
+      if (!window.bmovies?.ingestFile) return;
       row.classList.add('busy');
       log(`Ingesting: ${file.name}`);
       try {
-        const result = await window.bitcointorrent.ingestFile(file.path);
+        const result = await window.bmovies.ingestFile(file.path);
         if (result?.error) {
           log(`Ingest failed: ${result.error}`, 'err');
           return;
@@ -964,8 +964,8 @@
       document.getElementById('player').classList.remove('on');
       document.getElementById('settings').classList.add('on');
 
-      if (!window.bitcointorrent) return;
-      const cfg = await window.bitcointorrent.getConfig();
+      if (!window.bmovies) return;
+      const cfg = await window.bmovies.getConfig();
       if (!cfg) return;
 
       document.getElementById('set-seeder-addr').textContent = cfg.seederAddress;
@@ -995,27 +995,27 @@
     }
 
     async function addContentFolder() {
-      if (!window.bitcointorrent) return;
-      const folder = await window.bitcointorrent.addFolder();
+      if (!window.bmovies) return;
+      const folder = await window.bmovies.addFolder();
       if (folder) {
-        const cfg = await window.bitcointorrent.getConfig();
+        const cfg = await window.bmovies.getConfig();
         if (document.getElementById('set-folders')) renderFolders(cfg.contentFolders);
         loadSidebar();
       }
     }
 
     async function removeFolder(folder) {
-      if (!window.bitcointorrent) return;
-      await window.bitcointorrent.removeFolder(folder);
-      const cfg = await window.bitcointorrent.getConfig();
+      if (!window.bmovies) return;
+      await window.bmovies.removeFolder(folder);
+      const cfg = await window.bmovies.getConfig();
       renderFolders(cfg.contentFolders);
       loadSidebar();
     }
 
     async function regenWallet(which) {
-      if (!window.bitcointorrent) return;
+      if (!window.bmovies) return;
       if (!confirm(`Regenerate ${which} wallet? The old key will be lost.`)) return;
-      const result = await window.bitcointorrent.regenWallet(which);
+      const result = await window.bmovies.regenWallet(which);
       if (result) {
         document.getElementById(`set-${which}-addr`).textContent = result.address;
         loadWallet();
@@ -1023,11 +1023,11 @@
     }
 
     async function importKey(which) {
-      if (!window.bitcointorrent) return;
+      if (!window.bmovies) return;
       const wif = document.getElementById('set-import-wif').value.trim();
       if (!wif) return;
       const settings = which === 'seeder' ? { seederWif: wif } : { leecherWif: wif };
-      const result = await window.bitcointorrent.saveSettings(settings);
+      const result = await window.bmovies.saveSettings(settings);
       if (result?.saved) {
         document.getElementById('set-seeder-addr').textContent = result.seederAddress;
         document.getElementById('set-leecher-addr').textContent = result.leecherAddress;
@@ -1070,9 +1070,9 @@
       resultEl.textContent = 'Minting token...';
 
       let result;
-      if (window.bitcointorrent?.tokenize) {
+      if (window.bmovies?.tokenize) {
         // Electron IPC
-        result = await window.bitcointorrent.tokenize({ infohash: tokenizeInfohash, ticker, name, supply });
+        result = await window.bmovies.tokenize({ infohash: tokenizeInfohash, ticker, name, supply });
       } else {
         // Server API
         try {
@@ -1104,10 +1104,10 @@
     }
 
     async function savePrice() {
-      if (!window.bitcointorrent) return;
+      if (!window.bmovies) return;
       const price = parseInt(document.getElementById('set-price').value);
       if (price > 0) {
-        await window.bitcointorrent.saveSettings({ pricePerPiece: price });
+        await window.bmovies.saveSettings({ pricePerPiece: price });
         alert(`Price set to ${price} sat/piece.`);
       }
     }

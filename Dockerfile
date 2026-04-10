@@ -20,5 +20,5 @@ RUN mkdir -p /app/data
 EXPOSE 8404
 
 # Videos are mounted at /videos, env vars passed at runtime
-# Usage: docker run -p 8404:8404 -v /path/to/videos:/videos -e BSV_PRIVATE_KEY=... -e BSV_LEECHER_KEY=... bitcointorrent
+# Usage: docker run -p 8404:8404 -v /path/to/videos:/videos -e BSV_PRIVATE_KEY=... -e BSV_LEECHER_KEY=... bmovies
 CMD ["npx", "tsx", "scripts/docker-start.ts"]

@@ -1,5 +1,5 @@
 /**
- * BitCoinTorrent Browser Player.
+ * bMovies Browser Player.
  *
  * Connects the pieces:
  * - Fetches manifest via $402 gate

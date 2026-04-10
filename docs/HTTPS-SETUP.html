@@ -16,8 +16,8 @@
 </head>
 <body>
 
-<h1>HTTPS SETUP FOR BITCOINTORRENT</h1>
-<p>Setting up SSL on stream.bitcointorrent.online so the Vercel website can connect to the Hetzner streaming server without mixed content errors.</p>
+<h1>HTTPS SETUP FOR BMOVIES</h1>
+<p>Setting up SSL on stream.bmovies.online so the Vercel website can connect to the Hetzner streaming server without mixed content errors.</p>
 
 <h2>WHAT YOU NEED TO DO</h2>
 
@@ -27,7 +27,7 @@
 Name: stream
 Value: 135.181.103.181
 TTL: 300</pre>
-<p>This points stream.bitcointorrent.online to your Hetzner server.</p>
+<p>This points stream.bmovies.online to your Hetzner server.</p>
 </div>
 
 <div class="step">
@@ -37,10 +37,10 @@ TTL: 300</pre>
 
 <div class="step">
 <p><span class="step-num">Step 3:</span> Create the nginx config (needs sudo password):</p>
-<pre>sudo bash -c 'cat > /etc/nginx/sites-enabled/stream.bitcointorrent.online << "EOF"
+<pre>sudo bash -c 'cat > /etc/nginx/sites-enabled/stream.bmovies.online << "EOF"
 server {
     listen 80;
-    server_name stream.bitcointorrent.online;
+    server_name stream.bmovies.online;
     location / {
         proxy_pass http://127.0.0.1:8404;
         client_max_body_size 500M;
@@ -64,26 +64,26 @@ EOF'</pre>
 
 <div class="step">
 <p><span class="step-num">Step 5:</span> Get the SSL certificate (Let's Encrypt via Certbot):</p>
-<pre>sudo certbot --nginx -d stream.bitcointorrent.online --non-interactive --agree-tos -m hello@b0ase.com</pre>
+<pre>sudo certbot --nginx -d stream.bmovies.online --non-interactive --agree-tos -m hello@b0ase.com</pre>
 </div>
 
 <div class="step">
 <p><span class="step-num">Step 6:</span> Test it works:</p>
-<pre>curl -s https://stream.bitcointorrent.online/api/catalog</pre>
+<pre>curl -s https://stream.bmovies.online/api/catalog</pre>
 <p>You should see the JSON catalog with the 3 videos.</p>
 </div>
 
 <h2>AFTER HTTPS IS WORKING</h2>
-<p>Update the Vercel web app (app.html) to use https://stream.bitcointorrent.online instead of http://135.181.103.181:8404. This fixes the mixed content error.</p>
+<p>Update the Vercel web app (app.html) to use https://stream.bmovies.online instead of http://135.181.103.181:8404. This fixes the mixed content error.</p>
 
 <h2>WHAT THIS DOES</h2>
-<pre>Browser (HTTPS) → stream.bitcointorrent.online (HTTPS/443)
+<pre>Browser (HTTPS) → stream.bmovies.online (HTTPS/443)
     → nginx reverse proxy
-    → localhost:8404 (BitCoinTorrent Docker container)</pre>
+    → localhost:8404 (bMovies Docker container)</pre>
 <p>Nginx handles SSL termination. The Docker container stays on HTTP internally. Certbot auto-renews the Let's Encrypt certificate.</p>
 
 <div class="note">
-<p><strong>Project status:</strong> All code committed and pushed to GitHub (b0ase/BitCoinTorrent). 64 tests passing. Memory saved. Safe to restart IDE — pick up from here next session.</p>
+<p><strong>Project status:</strong> All code committed and pushed to GitHub (b0ase/bMovies). 64 tests passing. Memory saved. Safe to restart IDE — pick up from here next session.</p>
 <p><strong>Deployer password:</strong> You need the sudo password for the "deployer" user on Hetzner. The SSH key gets you in, but nginx/certbot commands need sudo.</p>
 </div>
 

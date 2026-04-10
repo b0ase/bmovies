@@ -1,5 +1,5 @@
 /**
- * BitCoinTorrent API Server.
+ * bMovies API Server.
  *
  * Fastify server that:
  * - Serves content catalog
@@ -630,7 +630,7 @@ export async function createServer(opts: ServerOptions) {
 
   const start = async () => {
     await app.listen({ port: opts.port, host: '0.0.0.0' });
-    console.log(`BitCoinTorrent seeder running on port ${opts.port}`);
+    console.log(`bMovies seeder running on port ${opts.port}`);
     console.log(`Seeder address: ${seeder.wallet.address}`);
   };
 
