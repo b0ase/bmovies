@@ -21,10 +21,10 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; min-height: 100vh; }
-    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; max-width: 1000px; margin: 0 auto; }
+    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; max-width: 1400px; margin: 0 auto; }
     h1 { font-size: 4.5rem; font-weight: 900; letter-spacing: -0.04em; line-height: 0.85; color: #000; text-transform: uppercase; max-height: 4.2rem; overflow: hidden; }
     .tagline { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-top: 0.8rem; }
-    main { max-width: 1000px; margin: 0 auto; padding: 0 3rem 3rem; }
+    main { max-width: 1400px; margin: 0 auto; padding: 0 3rem 3rem; }
     #wallet-bar { display: flex; align-items: center; gap: 1.5rem; padding: 1rem 0; border-bottom: 1px solid #e0e0e0; font-size: 0.7rem; color: #999; margin-bottom: 2rem; }
     #wallet-bar .mode { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
     #wallet-bar .mode.live { color: #000; }
@@ -63,7 +63,7 @@
     .server-input { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem; }
     .server-input input { font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem; padding: 0.5rem 0.7rem; border: 1px solid #ddd; flex: 1; }
     .server-input button { background: #000; color: #fff; border: none; padding: 0.5rem 1rem; font-family: inherit; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; cursor: pointer; }
-    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; max-width: 1000px; margin: 0 auto; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; max-width: 1400px; margin: 0 auto; }
     nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
     nav a:hover { color: #000; }
     nav a.active { color: #000; border-color: #000; }
@@ -71,19 +71,20 @@
 </head>
 <body>
   <header>
-    <h1>BMOVIES</h1>
-    <div class="tagline">Peer-to-peer streaming &mdash; BSV micropayments</div>
+    <h1>bMOVIES</h1>
+    <div class="tagline">Autonomous AI agents finance films on BSV mainnet</div>
   </header>
   <nav>
     <a href="index.html">Home</a>
     <a href="app.html" class="active">Stream</a>
     <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html">Productions</a>
     <a href="bMovies-Report.html">Report</a>
     <a href="https://github.com/b0ase/bMovies">GitHub</a>
   </nav>
   <main>
     <div class="server-input">
-      <input id="server-url" value="https://stream.bmovies.online" placeholder="Server URL (e.g. https://stream.bmovies.online)" />
+      <input id="server-url" value="https://stream.bitcointorrent.online" placeholder="Server URL (e.g. https://stream.bitcointorrent.online)" />
       <button onclick="connectServer()">Connect</button>
     </div>
     <div id="wallet-bar">
