@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 20mm 24mm; }
+  body { font-family: 'Helvetica Neue', sans-serif; color: #111; font-size: 11pt; line-height: 1.6; }
+  h1 { font-size: 24pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 0.5em; }
+  h2 { font-size: 14pt; font-weight: 700; margin-top: 2em; margin-bottom: 0.5em; }
+  p { margin-bottom: 0.8em; color: #333; }
+  pre { background: #f5f5f5; border: 1px solid #eee; padding: 12px 16px; font-family: 'SF Mono', Monaco, monospace; font-size: 9pt; line-height: 1.5; white-space: pre-wrap; margin: 1em 0; }
+  .step { margin: 1.5em 0; padding: 1em; border-left: 3px solid #000; background: #fafafa; }
+  .step-num { font-weight: 900; font-size: 12pt; }
+  .note { color: #888; font-size: 9pt; margin-top: 2em; border-top: 1px solid #eee; padding-top: 1em; }
+</style>
+</head>
+<body>
+
+<h1>HTTPS SETUP FOR BITCOINTORRENT</h1>
+<p>Setting up SSL on stream.bitcointorrent.online so the Vercel website can connect to the Hetzner streaming server without mixed content errors.</p>
+
+<h2>WHAT YOU NEED TO DO</h2>
+
+<div class="step">
+<p><span class="step-num">Step 1:</span> Add a DNS A record at your domain registrar (livedns.co.uk):</p>
+<pre>Type: A
+Name: stream
+Value: 135.181.103.181
+TTL: 300</pre>
+<p>This points stream.bitcointorrent.online to your Hetzner server.</p>
+</div>
+
+<div class="step">
+<p><span class="step-num">Step 2:</span> SSH into Hetzner:</p>
+<pre>ssh hetzner</pre>
+</div>
+
+<div class="step">
+<p><span class="step-num">Step 3:</span> Create the nginx config (needs sudo password):</p>
+<pre>sudo bash -c 'cat > /etc/nginx/sites-enabled/stream.bitcointorrent.online << "EOF"
+server {
+    listen 80;
+    server_name stream.bitcointorrent.online;
+    location / {
+        proxy_pass http://127.0.0.1:8404;
+        client_max_body_size 500M;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection upgrade;
+        proxy_read_timeout 86400;
+    }
+}
+EOF'</pre>
+</div>
+
+<div class="step">
+<p><span class="step-num">Step 4:</span> Test and reload nginx:</p>
+<pre>sudo nginx -t && sudo nginx -s reload</pre>
+</div>
+
+<div class="step">
+<p><span class="step-num">Step 5:</span> Get the SSL certificate (Let's Encrypt via Certbot):</p>
+<pre>sudo certbot --nginx -d stream.bitcointorrent.online --non-interactive --agree-tos -m hello@b0ase.com</pre>
+</div>
+
+<div class="step">
+<p><span class="step-num">Step 6:</span> Test it works:</p>
+<pre>curl -s https://stream.bitcointorrent.online/api/catalog</pre>
+<p>You should see the JSON catalog with the 3 videos.</p>
+</div>
+
+<h2>AFTER HTTPS IS WORKING</h2>
+<p>Update the Vercel web app (app.html) to use https://stream.bitcointorrent.online instead of http://135.181.103.181:8404. This fixes the mixed content error.</p>
+
+<h2>WHAT THIS DOES</h2>
+<pre>Browser (HTTPS) → stream.bitcointorrent.online (HTTPS/443)
+    → nginx reverse proxy
+    → localhost:8404 (BitCoinTorrent Docker container)</pre>
+<p>Nginx handles SSL termination. The Docker container stays on HTTP internally. Certbot auto-renews the Let's Encrypt certificate.</p>
+
+<div class="note">
+<p><strong>Project status:</strong> All code committed and pushed to GitHub (b0ase/BitCoinTorrent). 64 tests passing. Memory saved. Safe to restart IDE — pick up from here next session.</p>
+<p><strong>Deployer password:</strong> You need the sudo password for the "deployer" user on Hetzner. The SSH key gets you in, but nginx/certbot commands need sudo.</p>
+</div>
+
+</body>
+</html>

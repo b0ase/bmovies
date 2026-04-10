@@ -6,6 +6,7 @@ data/
 *.log
 .DS_Store
 .pnpmrc.json
+.vscode/
 
 # Electron build artifacts (generated from source)
 electron/main.mjs
