@@ -70,7 +70,7 @@
   </nav>
   <main>
     <div class="server-input">
-      <input id="server-url" value="" placeholder="Server URL (e.g. http://135.181.103.181:8404)" />
+      <input id="server-url" value="https://stream.bitcointorrent.online" placeholder="Server URL (e.g. https://stream.bitcointorrent.online)" />
       <button onclick="connectServer()">Connect</button>
     </div>
     <div id="wallet-bar">
@@ -118,14 +118,6 @@
       d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
       el.prepend(d);
       while (el.children.length > 300) el.removeChild(el.lastChild);
-    }
-
-    // HTTPS → HTTP mixed content workaround: redirect to server directly
-    if (location.protocol === 'https:') {
-      document.querySelector('.server-input').innerHTML =
-        '<div style="font-size:0.75rem;color:#999;padding:0.5rem 0;">' +
-        'This page is served over HTTPS but the streaming server uses HTTP. ' +
-        '<a href="http://135.181.103.181:8404" style="color:#000;font-weight:600;">Open the streaming app directly →</a></div>';
     }
 
     async function connectServer() {
