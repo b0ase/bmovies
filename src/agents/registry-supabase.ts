@@ -66,12 +66,13 @@ interface SubscriptionRow {
 interface ArtifactRow {
   id: number;
   offer_id: string;
-  kind: 'image' | 'video' | 'text';
+  kind: 'image' | 'video' | 'text' | 'audio';
   url: string;
   model: string;
   prompt: string;
   payment_txid: string;
   created_at: string;
+  role: string | null;
 }
 
 function rowToOffer(
@@ -104,6 +105,7 @@ function rowToOffer(
           prompt: artifact.prompt,
           paymentTxid: artifact.payment_txid,
           createdAt: new Date(artifact.created_at).getTime(),
+          role: (artifact.role as ProductionArtifact['role']) ?? undefined,
         }
       : undefined,
   };
@@ -316,6 +318,7 @@ export class SupabaseRegistry implements AgentRegistry {
         model: artifact.model,
         prompt: artifact.prompt,
         payment_txid: artifact.paymentTxid,
+        role: artifact.role ?? null,
       })
       .then(({ error }) => {
         if (error)

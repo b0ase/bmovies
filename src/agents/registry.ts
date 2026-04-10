@@ -22,9 +22,19 @@ export interface OfferSubscription {
   ts: number;
 }
 
+/**
+ * Which team role produced an artifact. Null when the artifact was
+ * produced by a single-producer run (the pre-team-refactor path).
+ */
+export type ProductionRole =
+  | 'director'
+  | 'writer'
+  | 'storyboard'
+  | 'composer';
+
 export interface ProductionArtifact {
   /** What kind of content was generated */
-  kind: 'image' | 'video' | 'text';
+  kind: 'image' | 'video' | 'text' | 'audio';
   /** URL (or other identifier) pointing at the generated content */
   url: string;
   /** Model that produced it, e.g. "flux-1" or "wan-2.1" */
@@ -35,6 +45,8 @@ export interface ProductionArtifact {
   paymentTxid: string;
   /** Unix timestamp (ms) when the artifact was delivered */
   createdAt: number;
+  /** The team role that produced this artifact (team path), or undefined */
+  role?: ProductionRole;
 }
 
 export interface ProductionOffer {

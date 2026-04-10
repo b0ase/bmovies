@@ -89,6 +89,11 @@ export interface BsvapiVideoRequest {
   aspect_ratio?: string;
 }
 
+export interface BsvapiMusicRequest {
+  prompt: string;
+  duration?: number;
+}
+
 export interface BsvapiResponse<T = unknown> {
   status: 'ok';
   body: T;
@@ -269,5 +274,9 @@ export class BsvapiClient {
 
   generateVideo<T = unknown>(req: BsvapiVideoRequest): Promise<BsvapiResponse<T>> {
     return this.postAndPay<T>('/api/v1/video/generate', req);
+  }
+
+  generateMusic<T = unknown>(req: BsvapiMusicRequest): Promise<BsvapiResponse<T>> {
+    return this.postAndPay<T>('/api/v1/music/generate', req);
   }
 }
