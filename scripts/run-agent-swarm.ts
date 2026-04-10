@@ -22,6 +22,7 @@
  *   --no-stream          run only the agent tick loops, skip streaming
  *   --slots N            pool slot count primed before streaming (default 100)
  *   --sats-per-slot N    sats allocated to each pool slot (default 500)
+ *   --prime-txid HEX     prefer this txid's utxo when priming the pool
  */
 
 import Fastify from 'fastify';
@@ -61,6 +62,10 @@ async function main() {
   const skipStream = flags['no-stream'] === true;
   const slotCount = Number(flags.slots ?? 100);
   const satsPerSlot = Number(flags['sats-per-slot'] ?? 500);
+  const primeTxid =
+    typeof flags['prime-txid'] === 'string'
+      ? (flags['prime-txid'] as string)
+      : undefined;
 
   const config = await loadAgentConfig();
   if (!config) {
@@ -126,6 +131,7 @@ async function main() {
         wallet: viewerWallet,
         slotCount,
         satsPerSlot,
+        preferTxid: primeTxid,
       });
       console.log(`Pool primed. Split txid: ${splitTxid}`);
     } catch (err) {

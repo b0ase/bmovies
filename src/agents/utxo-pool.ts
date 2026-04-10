@@ -116,8 +116,14 @@ export class UtxoPool {
     wallet: Wallet;
     slotCount: number;
     satsPerSlot: number;
+    /**
+     * If set, strongly prefer the UTXO whose tx_hash matches this
+     * string. Used to route around chain-deep UTXOs by pointing at
+     * a freshly funded output whose ancestry is known-shallow.
+     */
+    preferTxid?: string;
   }): Promise<{ splitTxid: string }> {
-    const { wallet, slotCount, satsPerSlot } = opts;
+    const { wallet, slotCount, satsPerSlot, preferTxid } = opts;
     if (slotCount <= 0) throw new Error('slotCount must be > 0');
     if (satsPerSlot <= 0) throw new Error('satsPerSlot must be > 0');
 
@@ -126,13 +132,18 @@ export class UtxoPool {
     if (utxos.length === 0) {
       throw new Error(`Viewer ${wallet.address} has no UTXOs to split`);
     }
-    const source = utxos.find((u) => u.satoshis >= needed);
-    if (!source) {
+    const candidates = utxos.filter((u) => u.satoshis >= needed);
+    if (candidates.length === 0) {
       throw new Error(
         `Viewer ${wallet.address} has no UTXO large enough to prime pool. ` +
           `Need ${needed} sats, largest is ${utxos[0]?.satoshis ?? 0}`,
       );
     }
+    // Prefer a known-shallow UTXO when the caller supplies preferTxid,
+    // otherwise fall back to the first candidate.
+    const source =
+      (preferTxid && candidates.find((u) => u.txid === preferTxid)) ||
+      candidates[0];
 
     const sourceTx = await wallet.fetchTransaction(source.txid);
 
