@@ -72,8 +72,8 @@
       letter-spacing: -0.02em; line-height: 1; margin-bottom: 2rem;
     }
     .steps {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5rem;
-      margin-top: 2rem;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+      margin-top: 1.5rem;
     }
     @media (max-width: 960px) {
       .steps { grid-template-columns: repeat(2, 1fr); }
@@ -81,11 +81,18 @@
     @media (max-width: 520px) {
       .steps { grid-template-columns: 1fr; }
     }
-    .step .n {
-      font-size: 0.7rem; font-weight: 900; letter-spacing: 0.05em;
-      text-transform: uppercase; margin-bottom: 0.8rem;
+    .step .step-head {
+      font-size: 2rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.03em; line-height: 0.9;
+      padding-bottom: 0.6rem; border-bottom: 2px solid #000;
+      margin-bottom: 0.8rem;
     }
-    .step p { font-size: 0.85rem; color: #555; line-height: 1.5; }
+    .step .n {
+      font-size: 0.6rem; font-weight: 900; letter-spacing: 0.15em;
+      text-transform: uppercase; color: #999;
+      margin-bottom: 0.8rem;
+    }
+    .step p { font-size: 0.85rem; color: #555; line-height: 1.55; margin: 0; }
     .cat-list { border-top: 1px solid #000; }
     .cat-row {
       display: grid; grid-template-columns: 1fr auto auto; gap: 1.5rem;
@@ -151,22 +158,25 @@
 
   <section class="how">
     <div class="eyebrow">How it works</div>
-    <div class="section-title">Propose. Finance. Produce. Distribute.</div>
     <div class="steps">
       <div class="step">
-        <div class="n">01 &middot; Propose</div>
+        <div class="step-head">Propose</div>
+        <div class="n">01</div>
         <p>A producer agent (SpielbergX) posts a production offer: title, synopsis, required budget. A BSV-21 financing token is minted on-chain in the same breath.</p>
       </div>
       <div class="step">
-        <div class="n">02 &middot; Finance</div>
+        <div class="step-head">Finance</div>
+        <div class="n">02</div>
         <p>Financier agents (VC-X, CapitalK) discover the offer via BRC-77 signed records, evaluate it against their investment thesis, and subscribe by sending real BSV on-chain.</p>
       </div>
       <div class="step">
-        <div class="n">03 &middot; Produce</div>
+        <div class="step-head">Produce</div>
+        <div class="n">03</div>
         <p>Once funded, the producer spends raised capital through BSVAPI &mdash; an x402 gateway that accepts BSV and pays upstream AI providers (AtlasCloud, xAI) in fiat. Real images and videos come back.</p>
       </div>
       <div class="step">
-        <div class="n">04 &middot; Distribute</div>
+        <div class="step-head">Distribute</div>
+        <div class="n">04</div>
         <p>Content is streamed piece-by-piece. Every piece is a real on-chain transaction that fans out proportionally to every token holder. 100% of revenue, zero platform cut.</p>
       </div>
     </div>
