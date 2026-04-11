@@ -238,6 +238,45 @@
       text-transform: uppercase; color: #999;
     }
     .pitch-preview .preview-budget strong { color: #000; font-weight: 900; }
+
+    /* Tier picker — four production tiers as selectable cards */
+    .tier-picker {
+      margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;
+      display: none;
+    }
+    .tier-picker.shown { display: block; }
+    .tier-picker .tp-label {
+      font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #999; font-weight: 700; margin-bottom: 0.55rem;
+    }
+    .tier-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    }
+    .tier-card {
+      border: 1px solid #000; padding: 0.7rem 0.8rem;
+      cursor: pointer; background: #fff; user-select: none;
+      display: flex; flex-direction: column;
+    }
+    .tier-card:hover { background: #fafafa; }
+    .tier-card.selected {
+      background: #000; color: #fff;
+    }
+    .tier-card .tc-name {
+      font-size: 0.7rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em; line-height: 1;
+    }
+    .tier-card .tc-price {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.6rem;
+      margin-top: 0.25rem; opacity: 0.8;
+    }
+    .tier-card .tc-blurb {
+      font-size: 0.55rem; line-height: 1.4; margin-top: 0.45rem;
+      opacity: 0.75;
+    }
+    .tier-card .tc-usd {
+      font-size: 0.5rem; letter-spacing: 0.05em; opacity: 0.6;
+      margin-top: 0.2rem;
+    }
     .pitch-status {
       margin-top: 0.7rem; font-size: 0.65rem; color: #666;
       letter-spacing: 0.05em;
@@ -370,13 +409,43 @@
           <div class="preview-title" id="preview-title"></div>
           <div class="preview-token" id="preview-token"></div>
           <div class="preview-synopsis" id="preview-synopsis"></div>
-          <div class="preview-team">
+          <div class="preview-team" id="preview-team">
             <span class="badge">Writer</span>
             <span class="badge">Director</span>
             <span class="badge">Storyboard</span>
             <span class="badge">Composer</span>
           </div>
-          <div class="preview-budget">Required budget: <strong id="preview-budget">5,000</strong> sats</div>
+          <div class="preview-budget">Selected tier: <strong id="preview-budget">— sats</strong></div>
+        </div>
+
+        <div class="tier-picker" id="tier-picker">
+          <div class="tp-label">Step 2 / 3 — Pick a production tier</div>
+          <div class="tier-grid">
+            <div class="tier-card" data-tier="sketch" data-sats="100">
+              <div class="tc-name">Sketch</div>
+              <div class="tc-price">100 sats</div>
+              <div class="tc-usd">≈ $0.02</div>
+              <div class="tc-blurb">Reserve a title + ticker. Token minted on-chain, no team dispatch.</div>
+            </div>
+            <div class="tier-card" data-tier="demo" data-sats="1000">
+              <div class="tc-name">Demo</div>
+              <div class="tc-price">1,000 sats</div>
+              <div class="tc-usd">≈ $0.16</div>
+              <div class="tc-blurb">Token + a real Grok writer treatment. No director / storyboard / composer.</div>
+            </div>
+            <div class="tier-card selected" data-tier="feature" data-sats="5000">
+              <div class="tc-name">Feature</div>
+              <div class="tc-price">5,000 sats</div>
+              <div class="tc-usd">≈ $0.80</div>
+              <div class="tc-blurb">Full four-role team: writer, director, storyboard, composer — all on-chain.</div>
+            </div>
+            <div class="tier-card" data-tier="blockbuster" data-sats="25000">
+              <div class="tc-name">Blockbuster</div>
+              <div class="tc-price">25,000 sats</div>
+              <div class="tc-usd">≈ $4.00</div>
+              <div class="tc-blurb">Feature tier + extended runtime and premium upstream models.</div>
+            </div>
+          </div>
         </div>
 
         <div class="pay-block" id="pay-block">
@@ -437,13 +506,29 @@
     const previewTitle = document.getElementById('preview-title');
     const previewToken = document.getElementById('preview-token');
     const previewSynopsis = document.getElementById('preview-synopsis');
+    const previewTeam = document.getElementById('preview-team');
     const previewBudget = document.getElementById('preview-budget');
+    const tierPicker = document.getElementById('tier-picker');
+    const tierCards = Array.from(document.querySelectorAll('.tier-card'));
     const payBlock = document.getElementById('pay-block');
     const payAmount = document.getElementById('pay-amount');
     const payAddress = document.getElementById('pay-address');
     const payTxid = document.getElementById('pay-txid');
     const paySubmit = document.getElementById('pay-submit');
     const status = document.getElementById('pitch-status');
+
+    // Production tier catalog. Drives both the visual picker (cards
+    // are server-rendered in the HTML) and the runtime pay flow.
+    // Tier prices here MUST match the data-sats attrs on the cards.
+    const TIERS = {
+      sketch:      { sats: 100,   roles: [] },
+      demo:        { sats: 1000,  roles: ['writer'] },
+      feature:     { sats: 5000,  roles: ['writer','director','storyboard','composer'] },
+      blockbuster: { sats: 25000, roles: ['writer','director','storyboard','composer'] },
+    };
+    // Default tier matches the pre-P3-2 single-fee behaviour so any
+    // visitor who ignores the picker still gets the Feature flow.
+    let selectedTier = 'feature';
 
     let refined = null;
     let config = null;
@@ -509,16 +594,54 @@
       const title = deriveTitle(text);
       const ticker = deriveTicker(title);
       const synopsis = deriveSynopsis(text);
-      const budget = 5000;
-      refined = { title, ticker, synopsis, budget };
+      refined = { title, ticker, synopsis };
       previewTitle.textContent = title;
       previewToken.textContent = '$' + ticker + ' (provisional ticker)';
       previewSynopsis.textContent = synopsis;
-      previewBudget.textContent = budget.toLocaleString();
       preview.classList.add('shown');
+      tierPicker.classList.add('shown');
+      paintSelectedTier();
       tokenizeBtn.disabled = false;
-      setStatus('Preview ready. Hit "Tokenize this pitch" to register it on the swarm.');
+      setStatus('Preview ready. Pick a production tier, then tokenize.');
     }
+
+    function paintSelectedTier() {
+      const tier = TIERS[selectedTier];
+      if (!tier) return;
+      // Update the preview's budget line to match the picked tier
+      previewBudget.textContent = tier.sats.toLocaleString() + ' sats';
+      // Update team badges — roles the selected tier includes are
+      // filled, missing ones are muted
+      const allRoles = ['writer','director','storyboard','composer'];
+      previewTeam.innerHTML = allRoles
+        .map((r) => {
+          const included = tier.roles.includes(r);
+          const style = included
+            ? 'border:1px solid #000;'
+            : 'border:1px solid #ccc;color:#ccc;';
+          const label = r[0].toUpperCase() + r.slice(1);
+          return `<span class="badge" style="${style}">${label}</span>`;
+        })
+        .join('');
+      // Highlight the selected card
+      tierCards.forEach((c) => {
+        if (c.dataset.tier === selectedTier) c.classList.add('selected');
+        else c.classList.remove('selected');
+      });
+    }
+
+    // Tier card click handlers — pick a tier, repaint, if pay block
+    // is already visible update the amount inline.
+    tierCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        selectedTier = card.dataset.tier;
+        paintSelectedTier();
+        if (payBlock.classList.contains('shown')) {
+          const sats = TIERS[selectedTier].sats;
+          payAmount.textContent = sats.toLocaleString() + ' sats';
+        }
+      });
+    });
 
     function showPayBlock() {
       if (!refined) return;
@@ -529,11 +652,16 @@
         );
         return;
       }
-      payAmount.textContent = (config.minSats || 1000).toLocaleString() + ' sats';
+      // Use the selected tier's price rather than a static minSats.
+      // Falls back to feature (5000) if the picker is somehow empty.
+      const tier = TIERS[selectedTier] ?? TIERS.feature;
+      payAmount.textContent = tier.sats.toLocaleString() + ' sats';
       payAddress.textContent = config.receiveAddress;
       payBlock.classList.add('shown');
       payTxid.focus();
-      setStatus('Send the payment from any BSV wallet, then paste the txid below.');
+      setStatus(
+        'Send ' + tier.sats.toLocaleString() + ' sats from any BSV wallet, then paste the txid below.',
+      );
     }
 
     async function submitPaidPitch() {
@@ -546,11 +674,16 @@
       paySubmit.disabled = true;
       setStatus('Submitting your pitch to the swarm…');
       try {
+        // Use the selected tier's price as the pitch's budget_sats.
+        // The PitchVerifier on the runner reads this to decide how
+        // the producer dispatches the production (sketch = mint only,
+        // feature = full team, etc).
+        const tier = TIERS[selectedTier] ?? TIERS.feature;
         const { error } = await supabase.from('bct_pitches').insert({
           title: refined.title,
           ticker: refined.ticker,
           synopsis: refined.synopsis,
-          budget_sats: refined.budget,
+          budget_sats: tier.sats,
           payment_address: config.receiveAddress,
           payment_txid: txid,
           status: 'pending',
