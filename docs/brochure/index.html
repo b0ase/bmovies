@@ -132,6 +132,117 @@
       .cat-row { grid-template-columns: 1fr; gap: 0.3rem; }
       .hero-head { font-size: 2.2rem; }
     }
+
+    /* Pitch widget — floating button + modal panel */
+    .pitch-fab {
+      position: fixed; bottom: 1.8rem; right: 1.8rem; z-index: 90;
+      background: #000; color: #fff; border: none;
+      padding: 1rem 1.4rem; font-family: inherit;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; cursor: pointer;
+      box-shadow: 0 4px 0 #000, 0 6px 16px rgba(0, 0, 0, 0.18);
+    }
+    .pitch-fab:hover { background: #222; }
+    .pitch-fab .dot {
+      display: inline-block; width: 0.5rem; height: 0.5rem;
+      background: #fff; border-radius: 50%; margin-right: 0.5rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+
+    .pitch-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+      z-index: 100; display: none; align-items: flex-end;
+      justify-content: flex-end; padding: 1.5rem;
+    }
+    .pitch-overlay.open { display: flex; }
+    .pitch-panel {
+      width: 100%; max-width: 460px; max-height: calc(100vh - 3rem);
+      background: #fff; border: 2px solid #000; display: flex;
+      flex-direction: column; overflow: hidden;
+    }
+    .pitch-panel header {
+      padding: 1.2rem 1.4rem; border-bottom: 2px solid #000;
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: none; margin: 0;
+    }
+    .pitch-panel header h3 {
+      font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+    .pitch-panel header .close {
+      background: none; border: none; font-size: 1.4rem;
+      font-weight: 900; cursor: pointer; color: #000; line-height: 1;
+    }
+    .pitch-body {
+      padding: 1.2rem 1.4rem; overflow-y: auto; flex: 1;
+    }
+    .pitch-body .kicker {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .pitch-body p.intro {
+      font-size: 0.8rem; color: #555; line-height: 1.55; margin-top: 0.5rem;
+    }
+    .pitch-body label {
+      display: block; margin-top: 1rem; font-size: 0.55rem;
+      letter-spacing: 0.12em; text-transform: uppercase; color: #999;
+      font-weight: 700;
+    }
+    .pitch-body textarea {
+      width: 100%; margin-top: 0.4rem; padding: 0.7rem;
+      border: 1px solid #000; font-family: inherit; font-size: 0.85rem;
+      resize: vertical; min-height: 70px; background: #fff;
+    }
+    .pitch-body textarea:focus { outline: 2px solid #000; outline-offset: -1px; }
+    .pitch-buttons {
+      display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap;
+    }
+    .pitch-buttons button {
+      flex: 1; min-width: 120px; padding: 0.7rem 1rem;
+      font-family: inherit; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+      border: 1px solid #000; background: #fff; color: #000;
+    }
+    .pitch-buttons button.primary { background: #000; color: #fff; }
+    .pitch-buttons button:hover { background: #222; color: #fff; }
+    .pitch-buttons button:disabled {
+      opacity: 0.4; cursor: not-allowed; background: #fff; color: #000;
+    }
+    .pitch-preview {
+      margin-top: 1.2rem; padding: 1rem; border: 1px solid #000;
+      background: #fafafa; display: none;
+    }
+    .pitch-preview.shown { display: block; }
+    .pitch-preview .preview-title {
+      font-size: 1.05rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.02em; line-height: 1.1;
+    }
+    .pitch-preview .preview-token {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.65rem;
+      color: #666; margin-top: 0.3rem;
+    }
+    .pitch-preview .preview-synopsis {
+      font-size: 0.78rem; color: #444; line-height: 1.55; margin-top: 0.7rem;
+    }
+    .pitch-preview .preview-team {
+      display: flex; gap: 0.3rem; margin-top: 0.7rem; flex-wrap: wrap;
+    }
+    .pitch-preview .preview-team .badge {
+      font-size: 0.5rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 0.2rem 0.45rem;
+      border: 1px solid #000;
+    }
+    .pitch-preview .preview-budget {
+      margin-top: 0.7rem; font-size: 0.6rem; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #999;
+    }
+    .pitch-preview .preview-budget strong { color: #000; font-weight: 900; }
+    .pitch-status {
+      margin-top: 0.7rem; font-size: 0.65rem; color: #666;
+      letter-spacing: 0.05em;
+    }
+    .pitch-status.error { color: #c00; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -206,6 +317,166 @@
     <h3>Try it in your browser</h3>
     <a href="app.html">Launch the player &rarr;</a>
   </section>
+
+  <!-- Pitch widget -->
+  <button class="pitch-fab" id="pitch-open" type="button">
+    <span class="dot"></span>Pitch a film
+  </button>
+
+  <div class="pitch-overlay" id="pitch-overlay">
+    <div class="pitch-panel" role="dialog" aria-modal="true" aria-label="Pitch a film">
+      <header>
+        <h3>Pitch a film</h3>
+        <button class="close" id="pitch-close" type="button" aria-label="Close">&times;</button>
+      </header>
+      <div class="pitch-body">
+        <div class="kicker">Step 1 / 2</div>
+        <p class="intro">Describe a film in one or two sentences. The producer agent will refine it into a tagline, synopsis and team brief. You can review the preview before tokenizing.</p>
+
+        <label for="pitch-input">Your idea</label>
+        <textarea id="pitch-input" placeholder="A retired hacker discovers her city's traffic lights have been writing poetry in Morse code for decades&hellip;"></textarea>
+
+        <div class="pitch-buttons">
+          <button id="pitch-refine" class="primary" type="button">Refine</button>
+          <button id="pitch-tokenize" type="button" disabled>Tokenize this pitch</button>
+        </div>
+
+        <div class="pitch-preview" id="pitch-preview">
+          <div class="kicker" style="margin-bottom:0.5rem;">Preview</div>
+          <div class="preview-title" id="preview-title"></div>
+          <div class="preview-token" id="preview-token"></div>
+          <div class="preview-synopsis" id="preview-synopsis"></div>
+          <div class="preview-team">
+            <span class="badge">Writer</span>
+            <span class="badge">Director</span>
+            <span class="badge">Storyboard</span>
+            <span class="badge">Composer</span>
+          </div>
+          <div class="preview-budget">Required budget: <strong id="preview-budget">5,000</strong> sats</div>
+        </div>
+        <div class="pitch-status" id="pitch-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Pitch widget. Refines a one-line idea into a tokenizable
+    // production preview, then hands off to the pay-to-register flow
+    // (Task 36 wires the actual POST). The refinement is template-
+    // based for now; a follow-up can swap in a server-side BSVAPI
+    // chat round-trip without changing the DOM contract.
+    (function () {
+      const fab = document.getElementById('pitch-open');
+      const overlay = document.getElementById('pitch-overlay');
+      const closeBtn = document.getElementById('pitch-close');
+      const input = document.getElementById('pitch-input');
+      const refineBtn = document.getElementById('pitch-refine');
+      const tokenizeBtn = document.getElementById('pitch-tokenize');
+      const preview = document.getElementById('pitch-preview');
+      const previewTitle = document.getElementById('preview-title');
+      const previewToken = document.getElementById('preview-token');
+      const previewSynopsis = document.getElementById('preview-synopsis');
+      const previewBudget = document.getElementById('preview-budget');
+      const status = document.getElementById('pitch-status');
+
+      let refined = null;
+
+      function openWidget() { overlay.classList.add('open'); input.focus(); }
+      function closeWidget() { overlay.classList.remove('open'); }
+      fab.addEventListener('click', openWidget);
+      closeBtn.addEventListener('click', closeWidget);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeWidget();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('open')) closeWidget();
+      });
+
+      // Title heuristic — take the first significant noun phrase or
+      // chop the input at the first sentence break, then title-case.
+      function deriveTitle(text) {
+        const cleaned = text.trim().replace(/\s+/g, ' ');
+        const firstSentence = cleaned.split(/[.!?]/)[0].trim();
+        const words = firstSentence.split(' ').slice(0, 6);
+        const titled = words
+          .map((w) => (w.length > 3 ? w[0].toUpperCase() + w.slice(1) : w))
+          .join(' ');
+        return titled || 'Untitled Production';
+      }
+
+      // 5-letter ticker derived from the title initials. Padded with
+      // X if too short. The producer swarm will append a counter when
+      // it actually mints the BSV-21 token.
+      function deriveTicker(title) {
+        const initials = title
+          .split(/\s+/)
+          .map((w) => w[0])
+          .filter((c) => /[A-Za-z]/.test(c))
+          .join('')
+          .toUpperCase()
+          .slice(0, 5);
+        return (initials + 'XXXXX').slice(0, 5);
+      }
+
+      function deriveSynopsis(text) {
+        const trimmed = text.trim().replace(/\s+/g, ' ');
+        if (trimmed.length > 240) return trimmed;
+        return (
+          trimmed +
+          (trimmed.endsWith('.') ? ' ' : '. ') +
+          'A bMovies producer agent will brief a four-role team — writer, ' +
+          'director, storyboard, composer — each spending raised capital on ' +
+          'BSVAPI to deliver real on-chain artifacts.'
+        );
+      }
+
+      function refine() {
+        const text = input.value.trim();
+        if (text.length < 8) {
+          status.textContent = 'Add a few more words so the agent has something to work with.';
+          status.classList.add('error');
+          return;
+        }
+        status.textContent = 'Refining your pitch…';
+        status.classList.remove('error');
+        // Synchronous refinement for the MVP — Task 36 will swap this
+        // for a server-side BSVAPI call that takes a few seconds.
+        const title = deriveTitle(text);
+        const ticker = deriveTicker(title);
+        const synopsis = deriveSynopsis(text);
+        const budget = 5000;
+        refined = { title, ticker, synopsis, budget };
+        previewTitle.textContent = title;
+        previewToken.textContent = '$' + ticker + ' (provisional ticker)';
+        previewSynopsis.textContent = synopsis;
+        previewBudget.textContent = budget.toLocaleString();
+        preview.classList.add('shown');
+        tokenizeBtn.disabled = false;
+        status.textContent = 'Preview ready. Hit "Tokenize this pitch" to register it on the swarm.';
+      }
+
+      function tokenize() {
+        if (!refined) return;
+        status.textContent = 'Pay-to-register flow coming next — for now, your pitch is queued in localStorage.';
+        // Persist locally so the next deploy of the registration API
+        // can pick up any queued pitches the visitor created. Wire to
+        // the real API in Task 36.
+        try {
+          const queue = JSON.parse(localStorage.getItem('bmovies_pitch_queue') || '[]');
+          queue.push({ ...refined, ts: Date.now() });
+          localStorage.setItem('bmovies_pitch_queue', JSON.stringify(queue));
+        } catch {}
+        tokenizeBtn.disabled = true;
+        tokenizeBtn.textContent = 'Queued ✓';
+      }
+
+      refineBtn.addEventListener('click', refine);
+      tokenizeBtn.addEventListener('click', tokenize);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) refine();
+      });
+    })();
+  </script>
 
   <script type="module">
     // Pull the most recent funded productions straight from the
