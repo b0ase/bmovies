@@ -667,7 +667,9 @@
     }
 
     // Tier card click handlers — pick a tier, repaint, if pay block
-    // is already visible update the amount inline.
+    // is already visible update the amount inline. Also clears any
+    // stale "Grok suggested X" status message since the user has
+    // manually overridden the suggestion by clicking a card.
     tierCards.forEach((card) => {
       card.addEventListener('click', () => {
         selectedTier = card.dataset.tier;
@@ -676,6 +678,10 @@
           const sats = TIERS[selectedTier].sats;
           payAmount.textContent = sats.toLocaleString() + ' sats';
         }
+        const name = card.querySelector('.tc-name')?.textContent?.trim() || selectedTier;
+        setStatus(
+          `${name} tier selected — ${TIERS[selectedTier].sats.toLocaleString()} sats. Hit Tokenize to register.`,
+        );
       });
     });
 
