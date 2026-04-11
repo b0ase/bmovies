@@ -21,6 +21,10 @@
  *   --pitch-id ID       inspect the pitch flow for a specific bct_pitches.id
  */
 
+import { config as loadEnv } from 'dotenv';
+loadEnv({ path: '.env.local' });
+loadEnv({ path: '.env' });
+
 import { createClient } from '@supabase/supabase-js';
 
 const ROLES = ['writer', 'director', 'storyboard', 'composer'] as const;
