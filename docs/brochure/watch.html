@@ -305,13 +305,16 @@
       walletStatus,
       walletInstallPrompt,
     } from './js/brc100.js';
+    import {
+      computeCascade,
+      renderCascade,
+      WATCH_PRICE_SATS,
+      PRODUCER_SHARE,
+    } from './js/cascade.js';
 
     const SUPABASE_URL = 'https://api.b0ase.com';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3Mzk3ODYzLCJleHAiOjE5MjUwNzc4NjN9.dJlnc64RLPA1jwDaPk8gA1suwnBn7r0I5L5eojM3Iig';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const WATCH_PRICE_SATS = 100;
-    const PRODUCER_SHARE = 0.20; // 20 sats to producer treasury, 80 to holders
 
     // ───────── helpers ─────────
 
@@ -443,63 +446,8 @@
 
     // ───────── playback render ─────────
 
-    /**
-     * Compute the per-output split for a watch payment. The user
-     * pays WATCH_PRICE_SATS total. PRODUCER_SHARE goes to the
-     * producer's treasury; the rest fans out to subscribers
-     * proportional to their subscription weight (sats column).
-     *
-     * Returns { outputs: [{address, satoshis, label}], totalOut }
-     * where the producer is always the first item (so the wallet
-     * UI shows "to the producer" first if it sorts by index).
-     *
-     * Edge cases:
-     *   - 0 subscribers → all goes to producer
-     *   - sub-dust holder shares → bumped to 1 sat each, deficit
-     *     comes out of the producer share
-     */
-    function computeCascade(offer) {
-      const subs = offer.bct_subscriptions || [];
-      const producerSats = Math.max(1, Math.floor(WATCH_PRICE_SATS * PRODUCER_SHARE));
-      let holderPool = WATCH_PRICE_SATS - producerSats;
-      const totalWeight = subs.reduce((s, x) => s + (Number(x.sats) || 0), 0);
-      const outputs = [{
-        address: offer.producer_address,
-        satoshis: producerSats,
-        label: `producer treasury (${offer.producer_id})`,
-      }];
-      if (subs.length === 0 || totalWeight <= 0) {
-        // No financiers — everything goes to the producer.
-        outputs[0].satoshis = WATCH_PRICE_SATS;
-        return { outputs, total: WATCH_PRICE_SATS };
-      }
-      // Proportional split, with a 1-sat dust floor per holder
-      const allocations = subs.map((s) => {
-        const share = Math.floor((holderPool * (Number(s.sats) || 0)) / totalWeight);
-        return { address: s.address, satoshis: share, label: 'holder ' + s.agent_id };
-      });
-      // Bump zero/dust to 1
-      let bumped = 0;
-      for (const a of allocations) {
-        if (a.satoshis === 0) { a.satoshis = 1; bumped++; }
-      }
-      // Deficit comes out of the producer share
-      let distributed = allocations.reduce((s, a) => s + a.satoshis, 0);
-      const deficit = (holderPool - distributed) + (bumped > 0 ? -bumped : 0);
-      // Add the remainder to the largest holder so the total is exact
-      if (distributed < holderPool) {
-        const idx = allocations
-          .map((a, i) => ({ a, i }))
-          .sort((x, y) => y.a.satoshis - x.a.satoshis)[0].i;
-        allocations[idx].satoshis += (holderPool - distributed);
-      } else if (distributed > holderPool) {
-        // Should not happen with floor() but guard anyway
-        outputs[0].satoshis = Math.max(1, outputs[0].satoshis - (distributed - holderPool));
-      }
-      outputs.push(...allocations);
-      const total = outputs.reduce((s, o) => s + o.satoshis, 0);
-      return { outputs, total };
-    }
+    // computeCascade lives in ./js/cascade.js — single source of
+    // truth for the per-watch revenue split, shared with offer.html.
 
     function renderPlayback(offer) {
       document.body.classList.add('playback');
@@ -690,6 +638,13 @@
       const stage = document.getElementById('stage');
       if (stage) stage.classList.add('unlocked');
 
+      // Render the cascade visualization on the dark playback page
+      // and inject its CSS once if it isn't already in the head.
+      const cascade = renderCascade(offer, { theme: 'dark' });
+      if (!document.querySelector('style[data-cascade-css="1"]')) {
+        document.head.insertAdjacentHTML('beforeend', cascade.css);
+      }
+
       // Receipt: list every output's txid with its WoC link
       const receiptHtml = (unlock.receipts || []).map((r) => `
         <div>
@@ -702,6 +657,7 @@
         receiptBlock.innerHTML = `
           <strong>Watch receipt:</strong> ${fmt(unlock.total || WATCH_PRICE_SATS)} sats split on-chain via ${esc(unlock.provider || 'BRC-100')}.<br>
           ${receiptHtml || '<em>No receipt — cached unlock from a previous session.</em>'}
+          <div style="margin-top:1.5rem;">${cascade.html}</div>
         `;
       }
     }

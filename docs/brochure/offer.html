@@ -299,6 +299,7 @@
 
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
+    import { renderCascade, WATCH_PRICE_SATS } from './js/cascade.js';
 
     const SUPABASE_URL = 'https://api.b0ase.com';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3Mzk3ODYzLCJleHAiOjE5MjUwNzc4NjN9.dJlnc64RLPA1jwDaPk8gA1suwnBn7r0I5L5eojM3Iig';
@@ -530,6 +531,17 @@
           </div>
         </details>`;
 
+      // Compute the per-watch revenue cascade for this offer's
+      // current subscriber set. The math (and the styled bar) come
+      // from the shared cascade.js module so watch.html and
+      // offer.html agree on every sat.
+      const cascade = renderCascade(offer, { theme: 'light' });
+      const cascadeHtml = cascade.html;
+      // Inject the cascade CSS once per page load
+      if (!document.querySelector('style[data-cascade-css="1"]')) {
+        document.head.insertAdjacentHTML('beforeend', cascade.css);
+      }
+
       const ogImage = storyboard ? storyboard.url : 'https://bmovies.online/bmovies_OG.png';
       // Update page meta dynamically so shares show the right title + image
       document.title = `bMovies — ${offer.title}`;
@@ -588,6 +600,20 @@
           <div class="eyebrow">Financiers</div>
           <h3>Who funded this film</h3>
           ${subsHtml}
+        </section>
+
+        <section class="block">
+          <div class="eyebrow">Where the sats go</div>
+          <h3>Every watch is an on-chain cascade</h3>
+          <p style="font-size:0.85rem;color:#555;line-height:1.6;margin-top:0.6rem;max-width:760px;">
+            When a viewer pays ${WATCH_PRICE_SATS} sats to unlock this film, the
+            BRC-100 wallet broadcasts a single transaction with multiple
+            outputs that fan out the revenue: 80% to the financiers above,
+            split proportional to their subscription weight; 20% to the
+            producer treasury. No platform cut, no escrow, no off-chain
+            bookkeeping.
+          </p>
+          <div style="margin-top:1.5rem;max-width:760px;">${cascadeHtml}</div>
         </section>
 
         <section class="block">
