@@ -31,6 +31,12 @@
  *                        in parallel for every funded offer instead of a single image call
  */
 
+// Replace Node 25's built-in localStorage with an in-memory shim
+// BEFORE any import that pulls in @bsv/sdk. The SDK's
+// HostReputationTracker touches globalThis.localStorage at module
+// load time; without the shim every run spews dozens of warnings.
+import '../src/lib/node-localstorage-shim.js';
+
 // Load .env.local before any module that might read process.env.
 // tsx does not auto-load dotenv files, so SUPABASE_*, PITCH_*, and
 // TAAL_ARC_API_KEY would otherwise be undefined here.
@@ -191,6 +197,16 @@ async function main() {
     getActiveStreams: () => activeLoops.size,
   };
 
+  // Bind the HTTP listener BEFORE priming the UTXO pool. Priming
+  // broadcasts a real on-chain split tx that locks up sats; doing
+  // it after the bind means a stale listener (EADDRINUSE) or any
+  // other startup error fails fast without wasting capital.
+  const app = Fastify({ logger: false });
+  registerAgentRoutes(app, { registry: swarm.registry });
+  registerDashboardRoutes(app, { swarm, counters });
+  await app.listen({ port, host: '0.0.0.0' });
+  console.log(`Dashboard live at http://localhost:${port}/agents`);
+
   // Shared UTXO pool for the viewer wallet. Primed once up front so
   // the streaming hot loop never has to hit WhatsOnChain for UTXOs
   // or source transactions, and so consecutive piece broadcasts sit
@@ -219,13 +235,6 @@ async function main() {
       pool = null;
     }
   }
-
-  // Fastify server hosts registry + dashboard
-  const app = Fastify({ logger: false });
-  registerAgentRoutes(app, { registry: swarm.registry });
-  registerDashboardRoutes(app, { swarm, counters });
-  await app.listen({ port, host: '0.0.0.0' });
-  console.log(`Dashboard live at http://localhost:${port}/agents`);
 
   swarm.start();
   console.log(`Swarm started with ${swarm.agents.length} agent(s)`);
