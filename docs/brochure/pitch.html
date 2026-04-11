@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bMovies — Pitch status</title>
+  <meta name="description" content="Track your bMovies pitch through the swarm: submitted, verified on-chain, converted to a production offer, in production. Every step verifiable on BSV mainnet." />
+  <link rel="icon" type="image/png" href="bmovies_OG.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="bMovies — Pitch status" />
+  <meta property="og:description" content="Track a bMovies pitch through the autonomous AI agent swarm, end to end on BSV mainnet." />
+  <meta property="og:image" content="https://bmovies.online/bmovies_OG.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="bMovies — Pitch status" />
+  <meta name="twitter:image" content="https://bmovies.online/bmovies_OG.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; }
+
+    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 4.5rem; font-weight: 900; letter-spacing: -0.04em; line-height: 0.85; color: #000; text-transform: uppercase; max-height: 4.2rem; overflow: hidden; }
+    .tagline { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-top: 0.8rem; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; max-width: 1400px; margin: 0 auto; }
+    nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    nav a:hover { color: #000; }
+    nav a.active { color: #000; border-color: #000; }
+    main { max-width: 1100px; margin: 0 auto; padding: 4rem 3rem; }
+
+    .intro {
+      padding-bottom: 2.5rem; margin-bottom: 2.5rem;
+      border-bottom: 1px solid #000;
+    }
+    .intro .kicker {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .intro h2 {
+      font-size: 2.6rem; font-weight: 900; letter-spacing: -0.03em;
+      line-height: 1; text-transform: uppercase; margin-top: 0.6rem;
+    }
+    .intro .pitch-id {
+      margin-top: 0.8rem; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.7rem; color: #999;
+    }
+
+    .pitch-summary {
+      margin-bottom: 3rem; padding: 1.5rem 1.8rem;
+      border: 1px solid #000;
+    }
+    .pitch-summary .ps-title {
+      font-size: 1.4rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.02em; line-height: 1.1;
+    }
+    .pitch-summary .ps-ticker {
+      margin-top: 0.4rem; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem; color: #666;
+    }
+    .pitch-summary .ps-synopsis {
+      margin-top: 0.9rem; font-size: 0.9rem; color: #444; line-height: 1.55;
+    }
+    .pitch-summary .ps-meta {
+      margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid #eee;
+      display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem;
+      font-size: 0.7rem;
+    }
+    .pitch-summary .ps-meta .k {
+      font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .pitch-summary .ps-meta .v {
+      font-family: 'SF Mono', Monaco, monospace; color: #000;
+      word-break: break-all;
+    }
+    .pitch-summary .ps-meta .v a { color: #000; border-bottom: 1px solid #000; text-decoration: none; }
+
+    /* Step tracker */
+    .steps {
+      margin-top: 3rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+    @media (max-width: 720px) {
+      .steps { grid-template-columns: 1fr; gap: 0.6rem; }
+    }
+    .step {
+      padding: 1.5rem 1.4rem;
+      border: 1px solid #ddd; border-right: none;
+      background: #fafafa; color: #999;
+      position: relative;
+    }
+    .step:last-child { border-right: 1px solid #ddd; }
+    @media (max-width: 720px) {
+      .step { border: 1px solid #ddd; }
+    }
+    .step.done {
+      background: #000; color: #fff; border-color: #000;
+    }
+    .step.active {
+      background: #fff; color: #000; border-color: #000;
+    }
+    .step.error {
+      background: #fff5f5; color: #900; border-color: #c00;
+    }
+    .step .step-n {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      font-weight: 700; opacity: 0.7;
+    }
+    .step .step-name {
+      font-size: 0.95rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em; margin-top: 0.3rem; line-height: 1.1;
+    }
+    .step .step-desc {
+      font-size: 0.65rem; margin-top: 0.5rem; line-height: 1.4; opacity: 0.85;
+    }
+    .step .step-tx {
+      margin-top: 0.6rem; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.55rem; opacity: 0.7;
+    }
+    .step .step-tx a { color: inherit; text-decoration: underline; }
+
+    .live-indicator {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #060; font-weight: 700; margin-top: 1.5rem;
+    }
+    .live-indicator .dot {
+      width: 8px; height: 8px; background: #060; border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+
+    .actions {
+      margin-top: 3rem; padding-top: 3rem; border-top: 2px solid #000;
+      display: flex; gap: 0.8rem; flex-wrap: wrap;
+    }
+    .actions a {
+      padding: 0.9rem 1.6rem; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      border: 1px solid #000; color: #000; text-decoration: none;
+    }
+    .actions a.primary { background: #000; color: #fff; }
+    .actions a:hover { background: #222; color: #fff; }
+
+    .save-link-banner {
+      margin-top: 1.5rem; padding: 1rem 1.4rem;
+      background: #fffbe6; border: 1px solid #d4b500;
+      font-size: 0.75rem; line-height: 1.55; color: #5a4500;
+    }
+    .save-link-banner strong { color: #2a2200; }
+
+    .state {
+      padding: 4rem 0; text-align: center; color: #999;
+    }
+    .state h2 {
+      font-size: 2.4rem; color: #eee; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -0.03em;
+    }
+    .state p { margin-top: 0.8rem; font-size: 0.9rem; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+    .state a { color: #000; font-weight: 700; border-bottom: 1px solid #000; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BMOVIES</h1>
+    <div class="tagline">Track your pitch through the swarm</div>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html">Productions</a>
+    <a href="watch.html">Watch</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="wallet.html">Wallet</a>
+    <a href="bMovies-Report.html">Report</a>
+    <a href="https://github.com/b0ase/bMovies">GitHub</a>
+  </nav>
+
+  <main id="root">
+    <div class="state"><h2>Loading&hellip;</h2></div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
+
+    const SUPABASE_URL = 'https://api.b0ase.com';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3Mzk3ODYzLCJleHAiOjE5MjUwNzc4NjN9.dJlnc64RLPA1jwDaPk8gA1suwnBn7r0I5L5eojM3Iig';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const POLL_MS = 5_000;
+    // ───── helpers ─────
+    const esc = (s) =>
+      String(s ?? '').replace(/[&<>"']/g, (c) => (
+        { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+      ));
+    const fmt = (n) => (Number(n) || 0).toLocaleString();
+    const wocTx = (t) => 'https://whatsonchain.com/tx/' + t;
+    const shortTx = (t) => t ? t.slice(0, 10) + '…' + t.slice(-6) : '—';
+
+    function renderState(html) {
+      document.getElementById('root').innerHTML = html;
+    }
+
+    // ───── data loading ─────
+
+    async function loadPitch(id) {
+      // The bct_pitches RLS policy is INSERT-only for the anon role —
+      // SELECT requires service-role. To work around this for the
+      // tracker, we expose a Supabase view or function in a future
+      // migration. Until then we try a direct select; if it fails
+      // we degrade gracefully and tell the visitor to bookmark the
+      // URL while we wire up read access.
+      try {
+        const { data, error } = await supabase
+          .from('bct_pitches')
+          .select('*')
+          .eq('id', Number(id))
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('pitch read failed:', err?.message || err);
+        return { _readBlocked: true };
+      }
+    }
+
+    async function loadOffer(offerId) {
+      if (!offerId) return null;
+      const { data, error } = await supabase
+        .from('bct_offers')
+        .select('id, title, status, raised_sats, required_sats, token_ticker, bct_artifacts(id, kind, role, url)')
+        .eq('id', offerId)
+        .maybeSingle();
+      if (error) {
+        console.warn('offer read failed:', error.message);
+        return null;
+      }
+      return data;
+    }
+
+    // ───── render ─────
+
+    /**
+     * Map pitch + linked offer state to a 4-step status array
+     * with each step's status: 'done' | 'active' | 'pending' | 'error'.
+     *
+     * Steps:
+     *   01 Submitted     pitch row exists in bct_pitches
+     *   02 Verified      payment_txid confirmed by PitchVerifier
+     *                    on-chain (status flips to 'verified' or
+     *                    'converted')
+     *   03 Converted     pitch became a real bct_offers row
+     *                    (status='converted', offer_id set)
+     *   04 In production producer agent picked it up and the offer
+     *                    is at funded / producing / released
+     */
+    function computeSteps(pitch, offer) {
+      const steps = [
+        {
+          n: '01',
+          name: 'Submitted',
+          desc: 'Your pitch is in the registry.',
+          status: pitch ? 'done' : 'pending',
+          tx: pitch?.payment_txid,
+        },
+        {
+          n: '02',
+          name: 'Verified on-chain',
+          desc: 'PitchVerifier confirmed your payment via WhatsOnChain.',
+          status: 'pending',
+        },
+        {
+          n: '03',
+          name: 'Converted',
+          desc: 'Pitch became a production offer the producer agent can pick up.',
+          status: 'pending',
+        },
+        {
+          n: '04',
+          name: 'In production',
+          desc: 'The four-role team is delivering writer / director / storyboard / composer.',
+          status: 'pending',
+        },
+      ];
+      if (!pitch) return steps;
+
+      if (pitch.status === 'rejected') {
+        steps[1].status = 'error';
+        steps[1].desc = pitch.rejection_reason || 'Verification failed.';
+        return steps;
+      }
+
+      if (pitch.status === 'pending') {
+        steps[1].status = 'active';
+        steps[1].desc = 'Waiting for the swarm verifier to confirm your tx (polls every 30s).';
+        return steps;
+      }
+
+      // 'verified' or 'converted' — both mean the on-chain check passed
+      steps[1].status = 'done';
+
+      if (pitch.status === 'verified') {
+        steps[2].status = 'active';
+        steps[2].desc = 'Payment confirmed; the runner is creating your offer row.';
+        return steps;
+      }
+
+      // 'converted'
+      steps[2].status = 'done';
+      steps[2].desc = pitch.offer_id
+        ? `Offer ${pitch.offer_id} created.`
+        : 'Offer created.';
+
+      if (!offer) {
+        steps[3].status = 'active';
+        steps[3].desc = 'Producer agent will pick up your offer on its next tick (~15s).';
+        return steps;
+      }
+
+      if (offer.status === 'open') {
+        steps[3].status = 'active';
+        steps[3].desc = `Open for financing. ${fmt(offer.raised_sats)} / ${fmt(offer.required_sats)} sats raised.`;
+      } else if (offer.status === 'funded') {
+        steps[3].status = 'active';
+        steps[3].desc = 'Funded — team dispatch starting.';
+      } else if (offer.status === 'producing' || offer.status === 'released') {
+        steps[3].status = 'done';
+        const arts = offer.bct_artifacts || [];
+        const roleCount = arts.filter((a) => a.role).length;
+        steps[3].desc = `${roleCount}/4 role${roleCount === 1 ? '' : 's'} delivered. ${offer.status === 'released' ? 'Released.' : 'In production.'}`;
+      }
+      return steps;
+    }
+
+    function renderStep(s) {
+      const txHtml = s.tx
+        ? `<div class="step-tx">tx <a href="${wocTx(s.tx)}" target="_blank" rel="noopener">${esc(shortTx(s.tx))}</a></div>`
+        : '';
+      return `
+        <div class="step ${s.status}">
+          <div class="step-n">Step ${s.n}</div>
+          <div class="step-name">${esc(s.name)}</div>
+          <div class="step-desc">${esc(s.desc)}</div>
+          ${txHtml}
+        </div>
+      `;
+    }
+
+    function renderPage(pitchId, pitch, offer) {
+      // Read-blocked fallback (RLS INSERT-only on bct_pitches)
+      if (pitch?._readBlocked) {
+        renderState(`
+          <div class="intro">
+            <div class="kicker">Pitch tracker</div>
+            <h2>Save this URL</h2>
+            <div class="pitch-id">Pitch #${esc(pitchId)}</div>
+          </div>
+          <div class="save-link-banner">
+            <strong>Heads up:</strong> the bct_pitches table is currently
+            write-only via the public anon key (Row Level Security insert
+            policy from migration 0004). The tracker can't read your pitch
+            row directly until we add a read-only Postgres view or
+            tighten the RLS rules — that's a follow-up commit.
+            <br><br>
+            In the meantime, your pitch <strong>is</strong> in the queue.
+            Keep this URL bookmarked and the swarm runner will pick it up
+            on its next verifier tick (every 30s). Watch the
+            <a href="leaderboard.html" style="color:#5a4500;font-weight:700;border-bottom:1px solid #5a4500;text-decoration:none;">leaderboard</a>
+            for your title to appear once it converts.
+          </div>
+          <div class="actions">
+            <a class="primary" href="leaderboard.html">▶ Open the leaderboard</a>
+            <a href="watch.html">All films</a>
+            <a href="index.html">bMovies home</a>
+          </div>
+        `);
+        return;
+      }
+
+      if (!pitch) {
+        renderState(`
+          <div class="state">
+            <h2>Pitch not found</h2>
+            <p>No pitch with id <code>${esc(pitchId)}</code> exists in the registry.
+               Submit a new one from the <a href="index.html">home page</a>.</p>
+          </div>
+        `);
+        return;
+      }
+
+      const steps = computeSteps(pitch, offer);
+      const summary = `
+        <div class="pitch-summary">
+          <div class="ps-title">${esc(pitch.title)}</div>
+          <div class="ps-ticker">$${esc(pitch.ticker)}  ·  ${fmt(pitch.budget_sats)} sats budget  ·  status: ${esc(pitch.status)}</div>
+          <div class="ps-synopsis">${esc(pitch.synopsis)}</div>
+          <div class="ps-meta">
+            <div class="k">Submitted</div>
+            <div class="v">${esc(new Date(pitch.created_at).toLocaleString())}</div>
+            <div class="k">Payment</div>
+            <div class="v">
+              <a href="${wocTx(pitch.payment_txid)}" target="_blank" rel="noopener">${esc(shortTx(pitch.payment_txid))}</a>
+            </div>
+            ${pitch.offer_id ? `
+              <div class="k">Offer</div>
+              <div class="v">
+                <a href="offer.html?id=${encodeURIComponent(pitch.offer_id)}">${esc(pitch.offer_id)}</a>
+              </div>
+            ` : '<div></div><div></div>'}
+            ${pitch.verified_at ? `
+              <div class="k">Verified</div>
+              <div class="v">${esc(new Date(pitch.verified_at).toLocaleString())}</div>
+            ` : '<div></div><div></div>'}
+          </div>
+        </div>
+      `;
+
+      const readyToWatch = offer && (offer.status === 'producing' || offer.status === 'released');
+      const liveIndicator = (pitch.status === 'rejected' || readyToWatch)
+        ? ''
+        : `<div class="live-indicator"><span class="dot"></span>Polling registry every ${POLL_MS / 1000}s</div>`;
+
+      const actions = readyToWatch
+        ? `
+          <a class="primary" href="watch.html?id=${encodeURIComponent(offer.id)}">▶ Watch your film</a>
+          <a href="offer.html?id=${encodeURIComponent(offer.id)}">Production detail</a>
+          <a href="leaderboard.html">Leaderboard</a>
+          <a href="index.html">bMovies home</a>
+        `
+        : `
+          <a class="primary" href="leaderboard.html">▶ Live leaderboard</a>
+          <a href="watch.html">Browse films</a>
+          <a href="index.html">bMovies home</a>
+        `;
+
+      renderState(`
+        <div class="intro">
+          <div class="kicker">Pitch tracker</div>
+          <h2>Your pitch is in the swarm</h2>
+          <div class="pitch-id">Pitch #${esc(pitchId)}</div>
+        </div>
+        ${summary}
+        <div class="steps">${steps.map(renderStep).join('')}</div>
+        ${liveIndicator}
+        <div class="actions">${actions}</div>
+      `);
+    }
+
+    // ───── bootstrap ─────
+
+    let pollHandle = null;
+
+    async function tick(pitchId) {
+      const pitch = await loadPitch(pitchId);
+      const offer = pitch && pitch.offer_id ? await loadOffer(pitch.offer_id) : null;
+      renderPage(pitchId, pitch, offer);
+
+      // Stop polling on terminal states
+      const terminal =
+        pitch?._readBlocked ||
+        pitch?.status === 'rejected' ||
+        (offer && (offer.status === 'producing' || offer.status === 'released'));
+      if (terminal && pollHandle) {
+        clearInterval(pollHandle);
+        pollHandle = null;
+      }
+    }
+
+    async function main() {
+      const params = new URLSearchParams(window.location.search);
+      const pitchId = params.get('id');
+      if (!pitchId) {
+        renderState(`
+          <div class="state">
+            <h2>No pitch id</h2>
+            <p>Open a pitch tracker by appending <code>?id=&lt;pitch-id&gt;</code> to the URL.
+               You'll get a unique pitch URL after submitting one from the
+               <a href="index.html">home page</a> pitch widget.</p>
+          </div>
+        `);
+        return;
+      }
+      await tick(pitchId);
+      pollHandle = setInterval(() => tick(pitchId), POLL_MS);
+    }
+
+    main();
+  </script>
+</body>
+</html>

@@ -721,15 +721,19 @@
         // the producer dispatches the production (sketch = mint only,
         // feature = full team, etc).
         const tier = TIERS[selectedTier] ?? TIERS.feature;
-        const { error } = await supabase.from('bct_pitches').insert({
-          title: refined.title,
-          ticker: refined.ticker,
-          synopsis: refined.synopsis,
-          budget_sats: tier.sats,
-          payment_address: config.receiveAddress,
-          payment_txid: txid,
-          status: 'pending',
-        });
+        const { data, error } = await supabase
+          .from('bct_pitches')
+          .insert({
+            title: refined.title,
+            ticker: refined.ticker,
+            synopsis: refined.synopsis,
+            budget_sats: tier.sats,
+            payment_address: config.receiveAddress,
+            payment_txid: txid,
+            status: 'pending',
+          })
+          .select('id')
+          .single();
         if (error) {
           if (/duplicate|unique/i.test(error.message)) {
             setStatus('That txid has already been submitted.', 'error');
@@ -739,12 +743,33 @@
           paySubmit.disabled = false;
           return;
         }
-        setStatus(
-          'Submitted. The verifier polls every 30s — your pitch will appear on the leaderboard once payment is confirmed.',
-          'success',
-        );
+        // Capture the inserted row's id and offer a tracker URL.
+        // RLS may block the SELECT depending on the policy version
+        // (insert-only policies return an empty data array even
+        // when the row was created); fall back to a generic link.
+        const pitchId = data?.id;
+        const trackerHref = pitchId
+          ? `pitch.html?id=${encodeURIComponent(String(pitchId))}`
+          : 'leaderboard.html';
+        const trackerHtml = pitchId
+          ? `<a href="${trackerHref}" style="color:#060;font-weight:900;border-bottom:2px solid #060;text-decoration:none;">Track your pitch →</a>`
+          : `<a href="${trackerHref}" style="color:#060;font-weight:900;border-bottom:2px solid #060;text-decoration:none;">Open the leaderboard →</a>`;
+        // setStatus uses textContent which would escape the HTML;
+        // for this one message we want a real link, so write innerHTML
+        // directly on the status element.
+        status.innerHTML =
+          'Submitted. The verifier polls every 30s. ' + trackerHtml;
+        status.classList.remove('error');
+        status.classList.add('success');
         paySubmit.textContent = 'Submitted ✓';
         tokenizeBtn.disabled = true;
+        // Open the tracker in a new tab so the visitor can keep the
+        // pitch widget context AND watch their submission progress.
+        if (pitchId) {
+          setTimeout(() => {
+            window.open(trackerHref, '_blank', 'noopener');
+          }, 600);
+        }
       } catch (err) {
         setStatus('Submission error: ' + (err && err.message ? err.message : err), 'error');
         paySubmit.disabled = false;
