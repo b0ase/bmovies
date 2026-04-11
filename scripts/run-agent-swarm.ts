@@ -27,6 +27,8 @@
  *   --max-offers N       max simultaneous open offers per producer (default 5)
  *   --bsvapi URL         enable BSVAPI content generation via this base URL
  *   --bsvapi-image-model M   which BSVAPI image model to use (default z-image/turbo)
+ *   --team               dispatch a 4-role agent team (writer/director/storyboard/composer)
+ *                        in parallel for every funded offer instead of a single image call
  */
 
 import Fastify from 'fastify';
@@ -80,6 +82,7 @@ async function main() {
     typeof flags['bsvapi-image-model'] === 'string'
       ? (flags['bsvapi-image-model'] as string)
       : undefined;
+  const teamMode = flags.team === true;
 
   // Piece broadcaster selection.
   //   --arc                          → GorillaPool public ARC (no key needed)
@@ -155,6 +158,7 @@ async function main() {
     bsvapiBaseUrl,
     bsvapiImageModel,
     bsvapiBroadcaster: pieceBroadcaster,
+    teamMode,
     productionIdeas: [
       'Star Wars Episode 1000',
       'The Last Piece',
@@ -216,6 +220,11 @@ async function main() {
 
   swarm.start();
   console.log(`Swarm started with ${swarm.agents.length} agent(s)`);
+  if (teamMode) {
+    console.log(
+      'Team mode ON: every funded offer will dispatch writer + director + storyboard + composer in parallel',
+    );
+  }
 
   // Watch the registry for newly funded offers and spawn a streaming
   // loop for each. The loop calls the viewer wallet's UTXOs directly

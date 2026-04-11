@@ -23,6 +23,11 @@ import { mintPresaleOnChain, type PresaleToken } from '../token/presale.js';
 import { subscribeOnChain, type SubscriptionReceipt } from './subscribe.js';
 import { BsvapiClient } from './bsvapi-client.js';
 import type { TxBroadcaster } from '../payment/broadcaster.js';
+import { WriterAgent } from './roles/writer.js';
+import { DirectorAgent } from './roles/director.js';
+import { StoryboardAgent } from './roles/storyboard.js';
+import { ComposerAgent } from './roles/composer.js';
+import type { RoleAgent, RoleAgentConfig } from './roles/role-agent.js';
 
 export interface SwarmLogEntry {
   ts: number;
@@ -95,6 +100,15 @@ export interface BuildSwarmOptions {
    */
   bsvapiImageModel?: string;
   /**
+   * When true, the producer's onOfferFunded hook dispatches a
+   * full team of role agents (Writer, Director, Storyboard,
+   * Composer) in parallel instead of a single generateImage call.
+   * Each role makes its own BSVAPI call and attaches its own
+   * artifact row. Default false so the proven single-producer path
+   * keeps running until the team path has been exercised live.
+   */
+  teamMode?: boolean;
+  /**
    * Optional broadcaster for BSVAPI payment txs. Typically the same
    * ArcBroadcaster used by the streaming loop.
    */
@@ -160,6 +174,69 @@ export function buildSwarm(
         onOfferFunded:
           live && bsvapiBaseUrl
             ? async (offer) => {
+                if (opts.teamMode) {
+                  // Team path: dispatch writer/director/storyboard/composer
+                  // in parallel. Each role makes its own BSVAPI call and
+                  // attaches its own artifact row tagged with its role. A
+                  // failed role (e.g. composer when REPLICATE_API_TOKEN is
+                  // missing upstream) does not block the others.
+                  const roleCfg: RoleAgentConfig = {
+                    bsvapiBaseUrl: bsvapiBaseUrl!,
+                    broadcaster: bsvapiBroadcaster,
+                    registry,
+                    budgetSats: Math.floor(offer.requiredSats / 4),
+                  };
+                  const mkIdentity = (
+                    role: 'writer' | 'director' | 'storyboard' | 'composer',
+                  ): AgentIdentity => ({
+                    id: `${rec.id}-${role}`,
+                    name: `${rec.name} (${role})`,
+                    role,
+                    persona: rec.persona,
+                  });
+                  const team: RoleAgent[] = [
+                    new WriterAgent(mkIdentity('writer'), wallet, roleCfg),
+                    new DirectorAgent(mkIdentity('director'), wallet, roleCfg),
+                    new StoryboardAgent(
+                      mkIdentity('storyboard'),
+                      wallet,
+                      roleCfg,
+                    ),
+                    new ComposerAgent(mkIdentity('composer'), wallet, roleCfg),
+                  ];
+                  const results = await Promise.allSettled(
+                    team.map((r) => r.execute(offer)),
+                  );
+                  let successes = 0;
+                  results.forEach((res, i) => {
+                    const role = team[i].role;
+                    if (res.status === 'fulfilled') {
+                      successes++;
+                      swarmLog({
+                        kind: 'tx',
+                        agentId: `${rec.id}-${role}`,
+                        message: `Team ${role} delivered ${res.value.kind} for ${offer.id} — ${res.value.url}`,
+                        txid: res.value.paymentTxid,
+                      });
+                    } else {
+                      const msg =
+                        res.reason instanceof Error
+                          ? res.reason.message
+                          : String(res.reason);
+                      swarmLog({
+                        kind: 'error',
+                        agentId: `${rec.id}-${role}`,
+                        message: `Team ${role} failed for ${offer.id}: ${msg}`,
+                      });
+                    }
+                  });
+                  if (successes === 0) {
+                    throw new Error(`All team roles failed for ${offer.id}`);
+                  }
+                  return;
+                }
+
+                // Single-producer path (default)
                 const client = new BsvapiClient({
                   baseUrl: bsvapiBaseUrl,
                   wallet,

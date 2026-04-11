@@ -8,7 +8,15 @@
 
 import { Wallet } from '../payment/wallet.js';
 
-export type AgentRole = 'producer' | 'financier' | 'compute' | 'seeder';
+export type AgentRole =
+  | 'producer'
+  | 'financier'
+  | 'compute'
+  | 'seeder'
+  | 'writer'
+  | 'director'
+  | 'storyboard'
+  | 'composer';
 
 export interface AgentIdentity {
   /** Stable machine identifier — kebab-case, no spaces */
