@@ -19,6 +19,8 @@
     "agents:swarm": "tsx scripts/run-agent-swarm.ts",
     "agents:validate": "tsx scripts/validate-team-run.ts",
     "agents:math": "tsx scripts/volume-math.ts",
+    "app:publish": "tsx scripts/publish-app-manifest.ts",
+    "app:publish:dry": "tsx scripts/publish-app-manifest.ts --dry-run",
     "electron:preload": "npx tsc -p electron/tsconfig.json",
     "electron:bundle": "npx esbuild electron/main.ts --bundle --platform=node --target=node22 --format=esm --outfile=electron/main.mjs --external:electron --external:bufferutil --external:utf-8-validate --external:utp-native --external:node-datachannel --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
     "electron:dev": "pnpm electron:preload && pnpm electron:bundle && electron electron/main.mjs",

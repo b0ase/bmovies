@@ -1,0 +1,122 @@
+{
+  "$schema": "https://bmovies.online/app-manifest.schema.json",
+  "name": "bMovies",
+  "version": "0.3.0",
+  "description": "Autonomous AI agent swarm that finances, produces, and distributes short films on BSV mainnet. Visitors browse films, pay 100 sats per watch via BRC-100, and watch every sat cascade back to the agents who financed the production — all verifiable on-chain.",
+  "shortDescription": "Films financed and produced by AI agents on Bitcoin.",
+  "tagline": "Pick a film. Pay 100 sats. Watch the cascade.",
+  "icon": "https://bmovies.online/bmovies_OG.png",
+  "ogImage": "https://bmovies.online/bmovies_OG.png",
+  "domain": "bmovies.online",
+  "homepage": "https://bmovies.online",
+  "category": "entertainment",
+  "subcategories": ["media", "ai", "film", "publishing"],
+  "tags": [
+    "brc-100",
+    "bsv-21",
+    "autonomous-agents",
+    "x402",
+    "bsvapi",
+    "ai-generated",
+    "film",
+    "micropayments",
+    "revenue-share",
+    "token-as-licence"
+  ],
+  "author": {
+    "name": "b0ase",
+    "url": "https://b0ase.com",
+    "github": "https://github.com/b0ase"
+  },
+  "license": "MIT",
+  "source": "https://github.com/b0ase/bmovies",
+  "entryPoints": {
+    "landing": "/",
+    "browse": "/watch.html",
+    "commission": "/",
+    "verify": "/leaderboard.html",
+    "wallet": "/wallet.html"
+  },
+  "requires": {
+    "wallet": "brc-100",
+    "walletImpls": ["bsv-desktop", "metanet-client", "yours-wallet"],
+    "standards": ["BRC-100", "BRC-42", "BRC-29", "BRC-77", "BSV-21", "BRC-0105"]
+  },
+  "pricing": {
+    "model": "pay-per-watch + pay-per-pitch",
+    "watchSats": 100,
+    "watchCascade": {
+      "holders": "80%",
+      "producerTreasury": "20%"
+    },
+    "pitchTiers": {
+      "sketch": { "sats": 100, "usd": 0.02, "delivers": "title + ticker, mint only" },
+      "demo": { "sats": 1000, "usd": 0.16, "delivers": "mint + writer treatment" },
+      "feature": { "sats": 5000, "usd": 0.80, "delivers": "full four-role team (writer, director, storyboard, composer)" },
+      "blockbuster": { "sats": 25000, "usd": 4.00, "delivers": "feature + premium models + extended runtime" }
+    }
+  },
+  "network": "bsv-mainnet",
+  "features": [
+    "Browse films proposed and financed by autonomous AI agents",
+    "Per-film cinematic playback with BRC-100 paywall",
+    "Every watch fee cascades on-chain to the financiers who funded the production",
+    "Commission a new film by paying a tiered registration fee via BRC-100",
+    "Track your pitch through submitted → verified → converted → producing",
+    "Verify every mint, subscription, and artifact payment on WhatsOnChain",
+    "Real AI content via xAI Grok + AtlasCloud z-image + Replicate MusicGen, paid through an x402 gateway"
+  ],
+  "hackathon": {
+    "event": "BSVA Open Run Agentic Pay",
+    "deadline": "2026-04-17T23:59:00Z",
+    "submissionUrl": "https://bmovies.online"
+  },
+  "agents": [
+    {
+      "id": "spielbergx",
+      "role": "producer",
+      "persona": "An autonomous producer agent that proposes films and dispatches the four-role team once an offer is funded"
+    },
+    {
+      "id": "vcx",
+      "role": "financier",
+      "persona": "An autonomous venture agent that evaluates offers against its investment thesis and subscribes on-chain"
+    },
+    {
+      "id": "capitalk",
+      "role": "financier",
+      "persona": "A second financier with a different risk thesis"
+    },
+    {
+      "id": "clawnode-a",
+      "role": "seeder",
+      "persona": "The streaming loop wallet that broadcasts per-piece fan-out payments to token holders"
+    },
+    {
+      "id": "spielbergx-writer",
+      "role": "team:writer",
+      "persona": "Writes the treatment via BSVAPI → xAI Grok"
+    },
+    {
+      "id": "spielbergx-director",
+      "role": "team:director",
+      "persona": "Writes the shot list via BSVAPI → xAI Grok"
+    },
+    {
+      "id": "spielbergx-storyboard",
+      "role": "team:storyboard",
+      "persona": "Generates the hero frame via BSVAPI → AtlasCloud z-image/turbo"
+    },
+    {
+      "id": "spielbergx-composer",
+      "role": "team:composer",
+      "persona": "Generates the theme via BSVAPI → Replicate MusicGen"
+    }
+  ],
+  "stats": {
+    "testsPass": 152,
+    "sustainedTxRate": "19 TX/s via GorillaPool ARC",
+    "projected24hTxs": "~1.65M",
+    "productionsProven": 3
+  }
+}
