@@ -154,6 +154,17 @@ export function buildSwarm(
   function swarmLog(entry: Omit<SwarmLogEntry, 'ts'>): void {
     log.push({ ts: Date.now(), ...entry });
     if (log.length > 1000) log.splice(0, log.length - 1000);
+    // Mirror to stdout so the operator can see mint / subscribe /
+    // team dispatch events live. The dashboard JSON snapshot still
+    // serves the full ring buffer.
+    const tag =
+      entry.kind === 'error'
+        ? '[SWARM ✗]'
+        : entry.kind === 'tx'
+          ? '[SWARM ✓]'
+          : '[SWARM  ]';
+    const txSuffix = entry.txid ? ` tx ${entry.txid.slice(0, 12)}…` : '';
+    console.log(`${tag} ${entry.agentId}: ${entry.message}${txSuffix}`);
   }
 
   for (const rec of agents) {
