@@ -1,0 +1,286 @@
+/*
+ * bMovies shared mobile stylesheet.
+ *
+ * Every brochure page links this file in its <head>. It defines
+ * mobile breakpoints for the chrome elements that every page
+ * shares — header, nav, main padding, h1, intro blocks, grids —
+ * so fixing mobile looks for the whole site happens in one place.
+ *
+ * Page-specific mobile tweaks (pitch widget full-screen, watch
+ * playback stage, offer.html artifact cards) still live inline
+ * in those individual pages because they touch selectors nothing
+ * else uses.
+ *
+ * Specificity: uses `body` as the anchor to bump specificity one
+ * level above the inline <style> rules without having to use
+ * !important on every property.
+ */
+
+/* ─────────────────────────────────────────────
+   Tablet / medium screens (max 960px)
+   ───────────────────────────────────────────── */
+@media (max-width: 960px) {
+  body header { padding: 2rem 2rem 1.5rem; }
+  body h1 { font-size: 3.6rem; max-height: 3.4rem; }
+  body nav { padding: 0 2rem; }
+  body main { padding: 3rem 2rem; }
+  body section { padding: 3rem 2rem; }
+}
+
+/* ─────────────────────────────────────────────
+   Phone screens (max 640px)
+   ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* ─── Header ─── */
+  body header {
+    padding: 1.5rem 1.25rem 1rem;
+  }
+  body h1 {
+    font-size: 2.6rem;
+    max-height: 2.4rem;
+    line-height: 0.85;
+  }
+  body header .tagline {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    margin-top: 0.6rem;
+  }
+
+  /* ─── Nav: horizontal scroll instead of wrap ─── */
+  /* 8 entries at full size won't fit on a 375px viewport even with
+     tight padding. Allow horizontal scroll so everything stays
+     reachable, hide the scrollbar, and snap to touch. */
+  body nav {
+    padding: 0 1.25rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  body nav::-webkit-scrollbar { display: none; }
+  body nav a {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+
+  /* ─── Main content padding ─── */
+  body main {
+    padding: 2rem 1.25rem;
+  }
+
+  /* ─── Generic section wrapper ─── */
+  body section {
+    padding: 2rem 1.25rem;
+  }
+
+  /* ─── Hero text on landing ─── */
+  body .hero-head {
+    font-size: 2.1rem;
+    line-height: 0.95;
+  }
+  body .hero-sub {
+    font-size: 0.85rem;
+    margin-top: 0.9rem;
+    line-height: 1.55;
+  }
+  body .hero-title {
+    font-size: 3rem;
+  }
+
+  /* ─── Stats strip becomes 2x2 on mobile ─── */
+  body .stats {
+    gap: 1rem;
+    font-size: 0.6rem;
+  }
+
+  /* ─── Hero CTA row wraps naturally ─── */
+  body .links {
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+  body .links a {
+    text-align: center;
+  }
+
+  /* ─── Intros (tokenize, productions, leaderboard, offer, pitch) ─── */
+  body .intro,
+  body .ns-intro {
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  body .intro h2,
+  body .ns-intro h2,
+  body .intro .h2 {
+    font-size: 1.9rem;
+    line-height: 0.95;
+  }
+  body .intro p,
+  body .ns-intro p {
+    font-size: 0.85rem;
+    margin-top: 0.8rem;
+  }
+  body .section-title {
+    font-size: 1.5rem;
+  }
+
+  /* ─── Stats grids default to 2 cols ─── */
+  body .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  body .summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ─── Grids that should collapse to 1 col on phones ─── */
+  body .grid,
+  body .ns-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ─── Leaderboard table → card layout ─── */
+  /* The leaderboard's 6-column table is unreadable below ~520px.
+     Convert every row into a stacked card; hide thead since the
+     labels live inside each cell via a data-label we inject, or
+     just read from context. */
+  body table.leaderboard thead { display: none; }
+  body table.leaderboard,
+  body table.leaderboard tbody,
+  body table.leaderboard tr,
+  body table.leaderboard td {
+    display: block;
+    width: 100%;
+  }
+  body table.leaderboard tr.row {
+    padding: 1rem 0;
+    border-bottom: 1px solid #000;
+  }
+  body table.leaderboard td {
+    padding: 0.2rem 0;
+    border: none;
+  }
+  body table.leaderboard td.rank {
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #999;
+  }
+  body table.leaderboard td.title {
+    font-size: 1.1rem;
+    min-width: 0;
+  }
+  body table.leaderboard td.token {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 0.2rem;
+  }
+  body table.leaderboard td.progress-cell {
+    min-width: 0;
+    margin-top: 0.5rem;
+  }
+  body table.leaderboard td.num {
+    text-align: left;
+    font-size: 0.7rem;
+  }
+  body table.leaderboard td.num::before {
+    content: 'Holders: ';
+    color: #999;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-right: 0.4rem;
+  }
+
+  /* ─── Pitch widget becomes a full-screen sheet ─── */
+  body .pitch-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  body .pitch-panel {
+    max-width: none;
+    max-height: none;
+    height: 100vh;
+    border: none;
+  }
+
+  /* ─── Offer page top row collapses ─── */
+  body .top {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  body .meta-head h2 {
+    font-size: 2.2rem;
+  }
+
+  /* ─── Offer page artifact grid → 1 col ─── */
+  body .artifacts {
+    grid-template-columns: 1fr;
+  }
+
+  /* ─── Watch page cinematic stage ─── */
+  body .stage .content h2 {
+    font-size: 2.4rem;
+  }
+  body .stage {
+    padding: 5rem 1.25rem 3rem;
+  }
+
+  /* ─── Pitch tracker 4-step grid stacks ─── */
+  body .steps {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  body .steps .step {
+    border: 1px solid #ddd;
+  }
+  body .steps .step.done,
+  body .steps .step.active,
+  body .steps .step.error {
+    border-width: 1px;
+  }
+
+  /* ─── Cascade visualization rows tighten up ─── */
+  body .cas-rows {
+    font-size: 0.7rem;
+  }
+  body .cas-row {
+    grid-template-columns: 12px 1fr auto auto;
+    gap: 0.5rem;
+  }
+  body .cas-label {
+    font-size: 0.65rem;
+    word-break: break-all;
+  }
+  body .cas-sats {
+    min-width: 4em;
+    font-size: 0.7rem;
+  }
+
+  /* ─── Actions footer stacks ─── */
+  body .actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  body .actions a {
+    text-align: center;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Tiny phone screens (max 380px)
+   ───────────────────────────────────────────── */
+@media (max-width: 380px) {
+  body header { padding: 1.25rem 1rem 0.8rem; }
+  body h1 { font-size: 2.2rem; max-height: 2rem; }
+  body main { padding: 1.5rem 1rem; }
+  body section { padding: 1.5rem 1rem; }
+  body .hero-head { font-size: 1.8rem; }
+  body .stats { grid-template-columns: 1fr; }
+  body .summary { grid-template-columns: 1fr; }
+}
