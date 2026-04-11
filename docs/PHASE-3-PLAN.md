@@ -1,361 +1,319 @@
-# bMovies Phase 3 — Consumer UX Plan
+# bMovies Phase 3 — BRC-100 App for the Metanet App Catalog
 
-> Written 2026-04-11, six days before the BSVA Open Run Agentic Pay
-> submission deadline (2026-04-17 23:59 UTC).
+> Rewritten 2026-04-11 after research into BSVA hackathon criteria,
+> the BRC-100 wallet interface, the Metanet App Catalog, and the
+> NPGX sibling project.
 >
-> **Phase 2 proved the protocol.** Autonomous agents on BSV mainnet
-> can propose films, raise BSV-21 financing, dispatch a four-role
-> team, commission real AI content through an x402 gateway, and
-> persist everything to a public registry. Three full productions
-> were delivered end-to-end in the live test on 2026-04-11 with 4/4
-> role coverage each.
->
-> **Phase 3 turns that protocol into a product.** The submission
-> needs a first-time visitor to land on bmovies.online and understand
-> the pitch in sixty seconds, see a film being financed in real time,
-> click into a specific production, watch a playback of the generated
-> content, pitch their own idea, and verify every claim against BSV
-> mainnet — all from their browser, ideally from their phone.
+> **Original Phase 3 plan (committed as `ed5db8f`) was aimed at the
+> wrong target.** It assumed a conventional web-app UX with paste-txid
+> payments. The actual target is a **BRC-100 app listable in the
+> Metanet App Catalog** (MetanetApps.com), talking to a BRC-100 wallet
+> (BSV Desktop / Metanet Client / Yours Wallet) over a vendor-neutral
+> interface. This is a substantially different product.
 
-## Mission statement
+## What the research told us
 
-> A stranger with no crypto background should land on bmovies.online
-> and, within five minutes, be able to: (1) understand what bMovies
-> is; (2) watch a specific film get financed, produced, and played
-> back; (3) verify the on-chain proof for every step; (4) submit
-> their own pitch; and (5) share a specific production URL.
+### BSVA "Open Run Agentic Pay" hackathon criteria
+- **Scale**: ≥ 1.5 million transactions in a 24-hour window. Must be
+  "meaningful to app functionality" — artificial inflation
+  disqualifies. Phase 2 proved 19 TX/s sustained = ~1.65M/24h, so
+  we already satisfy the scale requirement via the streaming loop.
+- **Wallet standard**: Agents discover each other using **BRC-100**
+  wallets and identity. HandCash is **not** BRC-100 and therefore
+  out of scope.
+- **Payment standard**: BSV micropayments via BRC-0105 (HTTP Service
+  Monetization Framework) — same standard BSVAPI already uses.
+- **Distribution**: Apps are listed in the **Metanet App Catalog**
+  at MetanetApps.com. Not a phone store, not a web brochure — a
+  catalog of apps that run against a BRC-100 wallet.
+- **Prize pool**: $10,000.
 
-If a judge can do those five things on their phone without running
-any code locally, the submission is done.
+### BRC-100 wallet interface
+- Unified vendor-neutral interface between a wallet and an app.
+- Built on BRC-42 (key derivation), BRC-2 (encryption), BRC-3
+  (signatures), BRC-29 (payment keys), BRC-62 (BEEF), BRC-67 (SPV).
+- BSV Desktop exposes the interface on `localhost:2121` as HTTPS.
+- Any app calling `createAction` etc. through this interface works
+  with **every** BRC-100 wallet: BSV Desktop, Metanet Client, Yours
+  Wallet, future wallets.
+- The app **never holds or touches private keys**. Signing and
+  broadcasting happen in the wallet, not the app.
+- This is the Web3 model, ported to BSV: the app is a pure frontend,
+  the wallet is the trust boundary.
 
-## Hackathon alignment
+### Metanet App Catalog
+- Renamed from "Metanet Desktop" to **BSV Desktop** in Dec 2025.
+- Apps in the catalog are built with Babbage developer tools and
+  follow the BRC-100 standard.
+- Current apps include on-chain polls, to-do lists, a marketplace,
+  proof-of-existence tools, utilities, social, gaming.
+- Distribution is decentralised — MetanetApps.com is a window into
+  public data on-chain, not a gatekept storefront.
+- **This is where bMovies should live.**
 
-The BSVA "Open Run Agentic Pay" brief asks for autonomous agents
-that move real money on a public network via x402 payments. bMovies
-already satisfies the protocol half. Phase 3 makes sure the
-submission also satisfies:
+### NPGX patterns worth stealing
+(Explored at `/Volumes/2026/Projects/npgx`.)
 
-- **Usability**: a judge can evaluate without cloning the repo.
-- **Verifiability**: every on-chain claim is one click away.
-- **Narrative**: the pitch is legible on mobile in 60 seconds.
-- **Novelty**: team-of-agents producing films is unique in the field.
+1. **Tiered commissioning model**: $49 / $99 / $199 / $9.99-99/mo.
+   Clean UX — user picks a tier and pays, no custom negotiation.
+2. **Revenue split cascade**: every viewer payment fans out
+   automatically across five levels of token holders via on-chain
+   piece payments. No platform cut at the root level — 100% goes to
+   holders, platform earns at higher-level token tiers.
+3. **Exchange + Watch + Token pages**: dedicated surfaces for
+   browsing, watching (with paywall), and token management.
+4. **`lib/brc100-wallet.ts`**: existing BRC-100 wrapper we can study
+   or reuse.
+5. **Paywall component** that checks token balance before unlocking.
+6. **Director Agent orchestration**: one agent coordinates the whole
+   production pipeline end-to-end. bMovies already does this via the
+   producer + role agents — we just need to surface it better.
+
+### NPGX patterns to REJECT
+- **HandCash integration**: out of scope per the hackathon criteria.
+- **Monolithic tiered browsing**: we keep the autonomous-swarm thesis
+  (films propose themselves) and add tiered commissioning on top.
+
+## Revised vision
+
+> A BRC-100 app called bMovies, listed in the Metanet App Catalog,
+> where a visitor can browse films being financed and produced by
+> an autonomous agent swarm, pay sats from their BRC-100 wallet to
+> watch a specific production, commission a new film at one of
+> four tiers, track the production through to completion, and
+> verify every step on BSV mainnet — all without touching a private
+> key, pasting a txid, or running any code locally.
+
+## Human-agent boundary
+
+Informed by NPGX, the cleanest model is:
+
+> **Humans commission. Agents execute. Payment IS approval.**
+
+No human-in-the-loop. No pending-approval step. The visitor pays at
+one of four tiers; the payment itself triggers the swarm. The
+visitor watches the production happen autonomously and claims the
+output once delivered.
+
+Three surfaces a human interacts with:
+
+| Surface | Action | Price |
+|---|---|---|
+| **Browse** | Land on bmovies.online or the app catalog entry, see active productions, read pitches | Free |
+| **Watch** | Click into a specific production, pay via BRC-100 to unlock full playback | 100 sats / ~$0.016 per watch |
+| **Commission** | Pitch a film idea, pick a tier, pay via BRC-100 to trigger the swarm | 100 / 1000 / 5000 / 25000 sats |
+
+## Monetization model
+
+### Tiered commissioning (replaces current single 5000-sat pitch)
+
+| Tier | Price | What you get |
+|---|---|---|
+| **Sketch** | 100 sats (~$0.016) | Title + synopsis preview. No production. |
+| **Demo** | 1000 sats (~$0.16) | BSV-21 token minted + writer treatment only. |
+| **Feature** | 5000 sats (~$0.80) | Full four-role team: writer + director + storyboard + composer |
+| **Blockbuster** | 25000 sats (~$4) | Feature + extended runtime, premium upstream models |
+
+Prices shown in sats AND USD in the UI.
+
+### Watch-gate (new)
+
+Every production has:
+- **Free preview**: title, ticker, 10-second treatment excerpt.
+- **Full watch**: unlocks writer treatment, director shot list,
+  storyboard image, composer audio player — cinematic sequence.
+- **Price**: 100 sats flat per watch.
+
+Payment cascade for each watch:
+- **80 sats** to content token holders, split pro-rata by balance
+- **20 sats** to producer treasury (operating cost)
+
+(Simpler than NPGX's 5-tier cascade; we'll add more tiers in Phase 4
+if we ship a parent token like `$BMOVIES`.)
+
+### Secondary market
+Out of scope for hackathon. Tokens are BSV-21 so they're already
+transferable by any BSV-21 compatible wallet.
 
 ## Non-goals (explicitly deferred)
 
-- **Account system / login**. No persistent identity. Pitches are
-  addressable by ID only.
-- **Real-time streaming video**. The swarm generates stills + audio
-  + treatment text, not video. A "watch" experience means cycling
-  through the assets, not playing a timeline.
-- **Browser-side wallet integration for human subscribers**. A
-  stretch goal at the bottom of the list, skipped if behind schedule.
-- **WebTorrent playback in browser**. Electron client remains the
-  path for that; we will remove `app.html` from the brochure nav so
-  it stops misleading visitors.
-- **Internationalisation**. English only.
-- **Accessibility audit**. Reasonable defaults (semantic HTML, alt
-  text, contrast) but no WCAG pass.
+- HandCash integration (not BRC-100 compliant — out of scope)
+- Account system / login / persistent identity (BRC-100 identity
+  provides this automatically)
+- Real video playback (stills + audio + text cycling is what the
+  swarm produces)
+- WebTorrent playback in browser (Electron client remains the path)
+- Phone app (MetanetApps.com lists web apps the BRC-100 wallet
+  launches; no native app required)
+- Internationalisation (English only)
+- WCAG audit (reasonable semantic HTML only)
+- `app.html` — removing it from the nav since it misleads visitors
+  toward a localhost-only Electron flow
 
-## Current state (as of 2026-04-11, end of Phase 2)
+## Current state recap (post Phase 2)
 
-Working and in production:
-
-- Autonomous swarm (producer + 2 financiers + seeder) ticking on
-  BSV mainnet with real on-chain txs for every action.
-- BSVAPI x402 gateway at https://www.bsvapi.com proxying xAI/Grok,
-  AtlasCloud z-image/turbo, and Replicate MusicGen.
-- Hetzner-hosted Supabase persistent registry (`bct_offers`,
-  `bct_subscriptions`, `bct_artifacts`, `bct_pitches`).
-- Team-mode dispatch: writer + director + storyboard + composer
-  delivering four artifacts per funded offer, sequentially, with no
-  UTXO contention.
-- Brochure site with six pages at https://bmovies.online:
-  `index.html`, `app.html`, `tokenize.html`, `productions.html`,
-  `leaderboard.html`, `bMovies-Report.html`.
-- Pitch-a-film widget with pay-to-register flow writing into
-  `bct_pitches` via Supabase RLS.
-- PitchVerifier runs on the swarm and converts paid pitches into
-  real offers once WoC confirms the payment.
-- Dashboard JSON API at `:8500/api/agents/snapshot` exposing full
-  swarm state for any page to query.
+- Swarm proven end-to-end: 3/3 productions delivered with 4/4 role
+  coverage in the 2026-04-11 live test.
+- Streaming fee bug fixed (slots retire before bankruptcy).
+- Brochure pages layout-aligned and nav-consistent.
+- Pay-to-register flow works with paste-txid (to be replaced).
 - 150/150 tests passing, 0 typecheck errors.
-- Streaming fee bug (`ARC [465]`) fixed — pool now retires slots
-  before they bankrupt themselves.
+- Screenshots saved as `productions-proof.png` / `leaderboard-proof.png`.
 
-Known gaps (what this plan addresses):
+## Task tiers
 
-- No shareable URL for a specific production.
-- No way for a visitor to watch a finished production.
-- Pitch submission has no confirmation or status tracking.
-- Landing page does not hook in 60 seconds.
-- On-chain proofs exist in the data but are not surfaced in the UI.
-- Mobile layouts untested.
-- Developer quickstart missing.
+### Tier 0 — must ship (3 days, core submission blockers)
 
-## Task breakdown
+| # | Task | Est |
+|---|---|---|
+| P3-1 | BRC-100 wallet connect + pay primitive (shared library) | 5h |
+| P3-2 | Tiered pricing UI (Sketch/Demo/Feature/Blockbuster) | 3h |
+| P3-3 | Per-offer deep-link page (`/offer.html?id=...`) | 4h |
+| P3-4 | Rich artifact rendering helpers (shared) | 3h |
+| P3-5 | Watch page with paywall gating (`/watch.html?id=...`) | 5h |
+| P3-6 | Revenue split visualization component | 2h |
+| P3-7 | Pitch status tracking page (`/pitch.html?id=...`) | 3h |
+| P3-8 | Landing page 60-second hook rewrite | 2h |
 
-Tasks are organised into three tiers. Tier 0 is required for the
-submission to feel like a product. Tier 1 is substantial polish.
-Tier 2 is optional and cut if we fall behind.
+**Tier 0 total: 27 hours.** This is 4-4.5 days at ~6h/day, leaving
+1.5 days for Tier 1 + tests + submission prep.
 
-### Tier 0 — must ship (core submission blockers)
+### Tier 1 — should ship (1 day)
 
-**P3-1. Per-offer deep-link page** — 4 hours
-- New file `docs/brochure/offer.html` rendering a single production
-  in full detail from a query param (`?id=<offer-id>`).
-- Sections: hero image, title, status/funding, 4 role artifact
-  blocks, subscriber list, presale token info, on-chain proof panel
-  (all tx links), "Watch this production" CTA.
-- Fetches from Supabase directly via anon key (no runner needed).
-- Mobile-first layout.
-- **Done**: open `https://bmovies.online/offer.html?id=<real-offer>`,
-  see every field, every link resolves, looks sensible on a phone.
+| # | Task | Est |
+|---|---|---|
+| P3-9 | Mobile responsive pass | 3h |
+| P3-10 | Nav cleanup (remove app.html, add Watch) | 0.5h |
+| P3-11 | Real Grok refinement via BSVAPI pooled wallet | 3h |
+| P3-12 | Metanet App Catalog submission manifest | 2h |
 
-**P3-2. Rich artifact rendering** — 3 hours
-- Writer treatment: decode `data:text/plain;charset=utf-8,...` URL,
-  render as a proper prose paragraph with a typographic "Treatment"
-  kicker. Drop-cap on the first letter.
-- Director shot list: decode `data:application/json;...`, render as
-  an ordered list of shot cards, each with the shot description.
-- Storyboard image: already renders as `<img>`, wrap in a
-  proper framed container with aspect ratio preserved.
-- Composer audio: custom-styled `<audio>` element with a black/white
-  play button and a "Commissioned via BSVAPI Replicate MusicGen"
-  attribution line. Link to the payment txid on WoC.
-- Used on both `productions.html` and the new `offer.html`.
-- **Done**: a real 4/4 production's artifacts look legible and
-  designed, not like raw dumps.
+**Tier 1 total: 8.5 hours (~1.5 days).**
 
-**P3-3. Pitch confirmation + status tracking** — 4 hours
-- After the pitch widget submits to `bct_pitches`, redirect (or
-  show a link) to `/pitch.html?id=<pitch-id>`.
-- `pitch.html` polls Supabase every 5s for the pitch row and shows
-  a 4-step progress: `submitted → verified → converted → producing`.
-- When status becomes `converted`, display the offer link so the
-  visitor can click into the new production.
-- Fallback: if the visitor closes the tab, the pitch URL still
-  works permanently.
-- **Done**: visitor submits a paid pitch, sees confirmation within
-  30s, watches it progress through to a real production they can
-  click into.
+### Tier 2 — stretch (cut if behind)
 
-**P3-4. Watch / playback page** — 5 hours
-- New file `docs/brochure/watch.html?id=<offer-id>`.
-- Linear storytelling experience:
-  1. Fade in the storyboard image as a full-screen hero
-  2. Type out the title and writer treatment over the image
-  3. Start playing the composer audio in background
-  4. Slowly pan through the director shot list as captions
-  5. End on a "Verify on-chain" call to action
-- Auto-plays on open. Pause / restart controls.
-- Shows the BSV-21 token info below the player.
-- Falls back gracefully if any role is missing (skip that beat).
-- **Done**: clicking Watch on any 4/4 production delivers a ~2-min
-  cinematic mini-experience that cycles through all four artifacts.
-
-**P3-5. Landing page 60-second hook rewrite** — 2 hours
-- Replace the current hero section on `index.html` with:
-  - A single-sentence pitch ("Autonomous AI agents finance films
-    on Bitcoin SV and produce them on demand, all verifiable on
-    mainnet.")
-  - A live counter strip (Productions / Artifacts / On-chain TXs /
-    Human involvement: 0) pulling from the snapshot API
-  - A "Watch a film now" CTA pointing to the watch page for the
-    most recent 4/4 production
-  - A "Pitch a film" CTA opening the existing widget
-- Drop the current 4-step "Propose / Finance / Produce / Distribute"
-  cards to below the fold — they're context, not a hook.
-- **Done**: someone who's never seen bMovies reads one screenful
-  and understands the pitch.
-
-**Tier 0 total: 18 hours (≈3 days of productive work).**
-
-### Tier 1 — should ship (major polish)
-
-**P3-6. On-chain proof panel** — 2 hours
-- Collapsible section on every production page listing every tx:
-  `mint SPIELB001 → [WoC]`, `subscribe vcx 2500 sats → [WoC]`,
-  `artifact writer → [WoC]`, etc.
-- Short explanation of what each tx represents.
-- **Done**: a judge can audit a production end-to-end in one click
-  from the production page.
-
-**P3-7. Mobile responsive pass** — 3 hours
-- Productions grid: 1 column below 520px.
-- Leaderboard table: convert to card layout on narrow viewports.
-- Landing hero: scales down cleanly without horizontal scroll.
-- Pitch widget: opens as a full-screen sheet on mobile instead of
-  a bottom-right panel.
-- Test on a real phone.
-- **Done**: bmovies.online is usable on a phone, no horizontal
-  scroll, nothing cropped.
-
-**P3-8. Developer quickstart guide** — 1 hour
-- New `docs/QUICKSTART.md`: 10-step clone → install → configure →
-  fund → launch → watch.
-- Linked from the README and from the Report page.
-- **Done**: an external developer can replicate the swarm in 30
-  minutes.
-
-**P3-9. Real Grok refinement in pitch widget** — 3 hours
-- New Vercel function `api/pitch/refine` that takes a rough pitch,
-  pays BSVAPI ~30 sats from a pooled wallet, returns a tagline +
-  synopsis + suggested budget.
-- Widget calls the endpoint instead of the template refinement.
-- Pooled wallet pre-funded with 10,000 sats for the demo.
-- Fallback to template if the endpoint fails.
-- **Done**: visitor types a one-liner, gets back a real AI-written
-  expansion, sees "refined by Grok via BSVAPI on BSV mainnet" in
-  the UI.
-
-**Tier 1 total: 9 hours (≈1.5 days).**
-
-### Tier 2 — nice to have (polish / story)
-
-**P3-10. Agent identity page** — 2 hours
-- New `docs/brochure/agents.html` listing every agent in the swarm.
-- Card per agent: name, persona blurb, role badge, BSV address
-  (WoC link), current balance (pulled live from WoC), total txs
-  broadcast (pulled from snapshot).
-- Covers producer, financiers, seeder, and the 4 role sub-agents.
-- **Done**: `/agents.html` renders a directory of every entity
-  moving money on behalf of the swarm.
-
-**P3-11. Live activity ticker** — 2 hours
-- On the landing page, a cycling ticker that reads the latest
-  swarm events: "🎬 Midnight Swarm funded by VC-X → ✍️ writer
-  delivered → 🎨 storyboard delivered → 🎵 composer delivered".
-- Polls `/api/agents/snapshot` every 5s.
-- **Done**: landing page feels alive, not static.
-
-**P3-12. Human subscribe flow** — 6 hours (stretch)
-- Browser flow for a real human to subscribe to a BSV-21 offer:
-  show QR code of the producer's address + required sats, visitor
-  scans with HandCash, pays, pastes txid, server-side Vercel
-  function verifies the payment and POSTs to the runner's agent
-  registry route.
-- Skipped if Tier 0 + Tier 1 run over.
-- **Done**: a visitor without an existing wallet integration can
-  actually subscribe to a film using HandCash on their phone.
-
-**Tier 2 total: 10 hours (but 6 of that is the stretch).**
+- **P3-STRETCH**: Agent identity page + live activity ticker (4h)
+- On-chain proof panel (merged into P3-3 as standard section)
 
 ### Tier 3 — pre-submission
 
-**P3-13. Final live test + screenshot bundle** — 1 hour
-- Truncate Hetzner tables, run the swarm for 20 minutes, generate
-  3-5 fresh 4/4 productions, screenshot every page + every artifact.
-- Commit screenshots to the repo.
+- **P3-13**: Developer quickstart doc + BSVA submission draft (2h)
+- **P3-14**: Final live test + screenshot bundle (1.5h)
 
-**P3-14. BSVA submission text** — 1 hour
-- Draft the submission email/form text.
-- Include: 1-paragraph pitch, link bundle, tx proof table, screenshot
-  bundle, key technical differentiators.
+## 6-day execution schedule
 
-## Execution schedule (6 days)
-
-Each day targets 4-6 hours of productive work.
-
-### Day 1 — Friday 2026-04-11 (today)
-
-- Phase 2 live test ✅
-- Streaming fee bug fix ✅ (shipped as `964e47f`)
-- **P3-1 per-offer deep-link page** (4h)
-- **P3-2 rich artifact rendering** (3h)
-- *Day 1 commits: 2*
+### Day 1 — Friday 2026-04-11 (today, evening)
+- P3-1 BRC-100 wallet connect library (5h)
+- *Learning curve budgeted into this one. First BRC-100 integration.*
 
 ### Day 2 — Saturday 2026-04-12
-
-- **P3-3 pitch confirmation + status tracking** (4h)
-- **P3-4 watch page — build the sequence engine** (3h)
-- *Day 2 commits: 2*
+- P3-2 Tiered pricing UI (3h)
+- P3-4 Rich artifact rendering helpers (3h)
+- P3-3 start per-offer page (2h)
 
 ### Day 3 — Sunday 2026-04-13
-
-- **P3-4 watch page — finish polish** (2h)
-- **P3-5 landing page 60s hook** (2h)
-- **P3-6 on-chain proof panel** (2h)
-- *Day 3 commits: 3*
+- P3-3 finish per-offer page (2h)
+- P3-7 Pitch status tracking page (3h)
+- P3-5 start Watch page (2h)
 
 ### Day 4 — Monday 2026-04-14
-
-- **P3-7 mobile responsive pass** (3h)
-- **P3-9 real Grok refinement endpoint** (3h)
-- *Day 4 commits: 2*
+- P3-5 finish Watch page (3h)
+- P3-6 Revenue split visualization (2h)
+- P3-8 Landing hook rewrite (2h)
+- **End of Day 4: Tier 0 complete.**
 
 ### Day 5 — Tuesday 2026-04-15
-
-- **P3-10 agent identity page** (2h)
-- **P3-11 live activity ticker** (2h)
-- **P3-8 quickstart guide** (1h)
-- *Buffer for fixes (1h)*
-- *Day 5 commits: 3 + fixes*
+- P3-9 Mobile responsive pass (3h)
+- P3-10 Nav cleanup (0.5h)
+- P3-12 Metanet App Catalog manifest (2h)
+- P3-11 Real Grok refinement (3h if time)
+- **Feature freeze at end of day**
 
 ### Day 6 — Wednesday 2026-04-16
-
-- **P3-13 final live test + screenshots** (1h)
-- **P3-14 submission text draft** (1h)
-- Review everything on mobile (2h)
-- *Feature freeze at 18:00; only fixes after*
+- P3-14 Final live test + screenshots (1.5h)
+- P3-13 Quickstart + submission draft (2h)
+- Mobile test on a real phone (1h)
+- Final buffer (2h)
 
 ### Day 7 — Thursday 2026-04-17 (submission day)
-
-- Final review (morning)
+- Morning: final review
 - Submit by noon
 - Buffer until 23:59 deadline
 
-### If we fall behind
+## Cut sequence if behind
 
-Cuts, in order:
-1. **P3-12** (human subscribe) — already labelled stretch, cut first
-2. **P3-11** (activity ticker) — pretty but optional
-3. **P3-10** (agents page) — pretty but optional
-4. **P3-9** (real Grok refinement) — template refinement still demos
-5. **P3-8** (quickstart) — can be a stub
+In order:
+1. **P3-STRETCH** (agents page + ticker) — cut first
+2. **P3-11** (real Grok refinement) — template still demos
+3. **P3-6** (revenue split viz) — swap for a text summary
+4. **P3-12** (app catalog manifest) — deferred to Phase 4
+5. **P3-9** (mobile pass) — desktop-only submission
 
-If we cut into Tier 0, the submission is not ready and we delay.
-Tier 0 is the floor.
+Tier 0 (P3-1 through P3-8) is the floor. Cutting into Tier 0 means
+we delay the submission.
 
-## Execution principles
+## Execution principles (unchanged from v1)
 
-1. **One task per atomic commit.** Build → test → commit → push
-   per task.
-2. **Every commit passes `pnpm vitest run` and `pnpm tsc --noEmit`.**
-3. **No task declared done without a visible URL on bmovies.online.**
-4. **Cap each task at +50% of estimate.** If a task overruns, cut
-   scope or defer to Tier 2 dropout.
-5. **Submission text written Day 6, not Day 7.** No last-minute
-   drafting under deadline pressure.
-6. **Every error surfaced in a test / typecheck / build is fixed
-   in the moment**, never classified as pre-existing.
-7. **Screenshots committed to the repo** every time a Tier 0 task
-   ships, so there is always a valid submission artifact on main.
+1. One task per atomic commit.
+2. Every commit passes `pnpm vitest run` + `pnpm tsc --noEmit`.
+3. No task declared done without a visible URL on bmovies.online.
+4. Cap each task at +50% of estimate.
+5. Fix every error in the moment, never classify as pre-existing.
+6. Submission text written Day 6, not Day 7.
+7. Screenshots committed after every Tier 0 task.
 
-## Risk matrix
+## Risk matrix (updated)
 
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| A Phase 2 regression from new code | Medium | High | Full test run before every commit; live smoke-test after merge |
-| Vercel redeploy breaks production | Low | High | Review deploy previews before promoting; keep previous deploy pinned |
-| Agent wallets drain during testing | Low | Medium | Monitor balances daily; top up if <10k sats remain |
-| BSVAPI upstream (Grok / Replicate) changes format | Low | Medium | Version-pin where possible; fallback paths |
-| Task overruns cascade | Medium | Medium | Strict +50% cap; Tier 2 cut sequence above |
-| HammerTime hook blocks a commit | Low | Low | Fix every error in the moment |
-| Deadline slip | Low | High | Day 6 is the feature freeze, not Day 7 |
+| **BRC-100 learning curve eats Day 1** | High | High | Day 1 is explicitly the BRC-100 day; can extend into Day 2 if needed by cutting P3-11 |
+| BRC-100 client library is immature / broken | Medium | High | Fall back to paste-txid for hackathon, document BRC-100 intent, ship anyway |
+| BSVAPI Vercel redeploy breaks production | Low | High | Review previews before promoting |
+| Watch page payment cascade bug loses sats | Medium | High | Test exhaustively on Day 4, unit tests for splitFanOut |
+| Day 1 scope creep | Medium | Medium | Strict +50% cap |
+| Typecheck / test regressions cascade | Low | Medium | Run full suite before every commit |
 
 ## Definition of done (the submission)
 
-The submission is ready to send when ALL of these are true:
+All of these must be true before we send:
 
-- [ ] Landing page hero rewritten, live counters working
-- [ ] Per-offer deep-link pages work for every production
-- [ ] Watch page plays a cinematic sequence for any 4/4 production
-- [ ] Pitch confirmation page tracks a pitch through to producing
-- [ ] On-chain proof panel surfaces every tx on every production
-- [ ] Mobile responsive pass complete, verified on a real phone
-- [ ] A fresh live test has run successfully in the last 24 hours
-- [ ] Screenshots committed in `docs/submission/` folder
-- [ ] Submission text draft saved in `docs/submission/draft.md`
+- [ ] BRC-100 wallet connect works — payments flow without paste-txid
+- [ ] Four tier prices visible and callable
+- [ ] Per-offer deep-link page renders every field
+- [ ] Watch page plays a cinematic sequence after paywall unlock
+- [ ] Pitch status page tracks a pitch through to producing
+- [ ] Landing page hooks in 60 seconds
+- [ ] Revenue split visualized for every watch payment
+- [ ] Nav clean (app.html removed, Watch added)
+- [ ] Mobile responsive verified on real phone
+- [ ] Metanet App Catalog manifest ready
+- [ ] Fresh live test done in last 24 hours
+- [ ] Screenshots committed in `docs/submission/`
+- [ ] Submission text draft in `docs/submission/draft.md`
 - [ ] 150+ tests passing
 - [ ] 0 typecheck errors
 - [ ] Main branch clean and pushed
+
+## Open questions for the operator
+
+1. **Should the Sketch tier (100 sats) actually produce anything?**
+   I lean toward "yes, a minted BSV-21 token + synopsis, but no team
+   dispatch". That way every tier produces SOMETHING on-chain.
+
+2. **Watch gate price: 100 sats flat, or scaled by tier?**
+   Simpler = 100 sats flat. Blockbusters being more expensive to
+   watch would be more realistic but adds UX complexity.
+
+3. **Revenue split ratio: 80/20 or something else?**
+   NPGX uses 100/0 at the root and earns via parent tokens. We don't
+   have a parent token yet, so 80/20 keeps the producer agent funded.
+
+4. **Should we ship without BRC-100 if Day 1 goes badly?**
+   I recommend: try BRC-100 seriously for 1 full day; if it's not
+   working by end of Day 1, fall back to paste-txid for hackathon and
+   note BRC-100 as future work. The core thesis (autonomous agents
+   making films on BSV) still holds.
+
+5. **Commission price and quality discovery**
+   Do we expose "actual cost" of each tier to BSVAPI? Transparency
+   would be good ("this Feature cost us 4200 sats upstream, we
+   charge 5000 for 15% margin"), but it's an extra feature.
