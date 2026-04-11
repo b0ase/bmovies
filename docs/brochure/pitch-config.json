@@ -1,0 +1,7 @@
+{
+  "receiveAddress": "",
+  "minSats": 1000,
+  "supabaseUrl": "https://api.b0ase.com",
+  "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3Mzk3ODYzLCJleHAiOjE5MjUwNzc4NjN9.dJlnc64RLPA1jwDaPk8gA1suwnBn7r0I5L5eojM3Iig",
+  "comment": "receiveAddress is left blank intentionally — set it to a BSV address controlled by the operator before enabling the pay-to-register flow. The runner must be started with PITCH_RECEIVE_ADDRESS pointing to the same address."
+}

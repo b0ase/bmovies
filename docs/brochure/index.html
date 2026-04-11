@@ -243,6 +243,29 @@
       letter-spacing: 0.05em;
     }
     .pitch-status.error { color: #c00; font-weight: 700; }
+    .pitch-status.success { color: #060; font-weight: 700; }
+    .pay-block {
+      margin-top: 1rem; padding: 1rem; border: 1px solid #000;
+      background: #fff; display: none;
+    }
+    .pay-block.shown { display: block; }
+    .pay-block .pay-line {
+      font-size: 0.65rem; color: #666; margin-top: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+    .pay-block .pay-line strong {
+      display: block; font-family: 'SF Mono', Monaco, monospace;
+      color: #000; font-weight: 700; word-break: break-all;
+      margin-top: 0.2rem; font-size: 0.7rem;
+    }
+    .pay-block input.txid-input {
+      width: 100%; margin-top: 0.6rem; padding: 0.6rem;
+      border: 1px solid #000; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.7rem; background: #fff;
+    }
+    .pay-block input.txid-input:focus {
+      outline: 2px solid #000; outline-offset: -1px;
+    }
   </style>
 </head>
 <body>
@@ -354,128 +377,224 @@
           </div>
           <div class="preview-budget">Required budget: <strong id="preview-budget">5,000</strong> sats</div>
         </div>
+
+        <div class="pay-block" id="pay-block">
+          <div class="kicker">Step 2 / 2 — Pay to register</div>
+          <div class="pay-line">
+            Send <strong id="pay-amount">— sats</strong>
+          </div>
+          <div class="pay-line">
+            To
+            <strong id="pay-address">—</strong>
+          </div>
+          <div class="pay-line" style="margin-top:0.7rem;">
+            Then paste the payment txid below. The verifier on the swarm
+            will confirm it on-chain and your pitch will appear on the
+            <a href="leaderboard.html" style="color:#000;font-weight:700;border-bottom:1px solid #000;text-decoration:none;">leaderboard</a>
+            within a minute.
+          </div>
+          <input type="text" class="txid-input" id="pay-txid"
+                 placeholder="payment txid (64 hex chars)" autocomplete="off" />
+          <div class="pitch-buttons" style="margin-top:0.6rem;">
+            <button id="pay-submit" class="primary" type="button">Submit pitch</button>
+          </div>
+        </div>
+
         <div class="pitch-status" id="pitch-status"></div>
       </div>
     </div>
   </div>
 
-  <script>
-    // Pitch widget. Refines a one-line idea into a tokenizable
-    // production preview, then hands off to the pay-to-register flow
-    // (Task 36 wires the actual POST). The refinement is template-
-    // based for now; a follow-up can swap in a server-side BSVAPI
-    // chat round-trip without changing the DOM contract.
-    (function () {
-      const fab = document.getElementById('pitch-open');
-      const overlay = document.getElementById('pitch-overlay');
-      const closeBtn = document.getElementById('pitch-close');
-      const input = document.getElementById('pitch-input');
-      const refineBtn = document.getElementById('pitch-refine');
-      const tokenizeBtn = document.getElementById('pitch-tokenize');
-      const preview = document.getElementById('pitch-preview');
-      const previewTitle = document.getElementById('preview-title');
-      const previewToken = document.getElementById('preview-token');
-      const previewSynopsis = document.getElementById('preview-synopsis');
-      const previewBudget = document.getElementById('preview-budget');
-      const status = document.getElementById('pitch-status');
+  <script type="module">
+    // Pitch widget — pay-to-register flow.
+    //
+    // Step 1: visitor describes a film, hits Refine. The widget
+    //   client-side templates a title / ticker / synopsis preview
+    //   so they can see what the producer agent will run with.
+    // Step 2: visitor hits "Tokenize this pitch", which reveals the
+    //   pay-to-register block: address + min sats + a txid input.
+    //   They send a payment from any BSV wallet, paste the txid,
+    //   and submit. The widget inserts the row directly into
+    //   bct_pitches via the Supabase anon key. The runner's
+    //   PitchVerifier picks it up, hits WoC to confirm payment,
+    //   and converts the pitch into a real bct_offers row that
+    //   the producer agents pick up on their next tick.
+    //
+    // pitch-config.json is fetched at load so the operator can
+    // rotate the receive address and Supabase URL without editing
+    // this file. If receiveAddress is empty the flow shows a
+    // friendly "not yet open" message instead of asking for money.
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
 
-      let refined = null;
+    const fab = document.getElementById('pitch-open');
+    const overlay = document.getElementById('pitch-overlay');
+    const closeBtn = document.getElementById('pitch-close');
+    const input = document.getElementById('pitch-input');
+    const refineBtn = document.getElementById('pitch-refine');
+    const tokenizeBtn = document.getElementById('pitch-tokenize');
+    const preview = document.getElementById('pitch-preview');
+    const previewTitle = document.getElementById('preview-title');
+    const previewToken = document.getElementById('preview-token');
+    const previewSynopsis = document.getElementById('preview-synopsis');
+    const previewBudget = document.getElementById('preview-budget');
+    const payBlock = document.getElementById('pay-block');
+    const payAmount = document.getElementById('pay-amount');
+    const payAddress = document.getElementById('pay-address');
+    const payTxid = document.getElementById('pay-txid');
+    const paySubmit = document.getElementById('pay-submit');
+    const status = document.getElementById('pitch-status');
 
-      function openWidget() { overlay.classList.add('open'); input.focus(); }
-      function closeWidget() { overlay.classList.remove('open'); }
-      fab.addEventListener('click', openWidget);
-      closeBtn.addEventListener('click', closeWidget);
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeWidget();
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && overlay.classList.contains('open')) closeWidget();
-      });
+    let refined = null;
+    let config = null;
+    let supabase = null;
 
-      // Title heuristic — take the first significant noun phrase or
-      // chop the input at the first sentence break, then title-case.
-      function deriveTitle(text) {
-        const cleaned = text.trim().replace(/\s+/g, ' ');
-        const firstSentence = cleaned.split(/[.!?]/)[0].trim();
-        const words = firstSentence.split(' ').slice(0, 6);
-        const titled = words
-          .map((w) => (w.length > 3 ? w[0].toUpperCase() + w.slice(1) : w))
-          .join(' ');
-        return titled || 'Untitled Production';
+    function setStatus(text, kind) {
+      status.textContent = text;
+      status.classList.remove('error', 'success');
+      if (kind) status.classList.add(kind);
+    }
+
+    function openWidget() { overlay.classList.add('open'); input.focus(); }
+    function closeWidget() { overlay.classList.remove('open'); }
+    fab.addEventListener('click', openWidget);
+    closeBtn.addEventListener('click', closeWidget);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeWidget();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeWidget();
+    });
+
+    function deriveTitle(text) {
+      const cleaned = text.trim().replace(/\s+/g, ' ');
+      const firstSentence = cleaned.split(/[.!?]/)[0].trim();
+      const words = firstSentence.split(' ').slice(0, 6);
+      const titled = words
+        .map((w) => (w.length > 3 ? w[0].toUpperCase() + w.slice(1) : w))
+        .join(' ');
+      return titled || 'Untitled Production';
+    }
+
+    function deriveTicker(title) {
+      const initials = title
+        .split(/\s+/)
+        .map((w) => w[0])
+        .filter((c) => /[A-Za-z]/.test(c))
+        .join('')
+        .toUpperCase()
+        .slice(0, 5);
+      return (initials + 'XXXXX').slice(0, 5);
+    }
+
+    function deriveSynopsis(text) {
+      const trimmed = text.trim().replace(/\s+/g, ' ');
+      if (trimmed.length > 240) return trimmed;
+      return (
+        trimmed +
+        (trimmed.endsWith('.') ? ' ' : '. ') +
+        'A bMovies producer agent will brief a four-role team — writer, ' +
+        'director, storyboard, composer — each spending raised capital on ' +
+        'BSVAPI to deliver real on-chain artifacts.'
+      );
+    }
+
+    function refine() {
+      const text = input.value.trim();
+      if (text.length < 8) {
+        setStatus('Add a few more words so the agent has something to work with.', 'error');
+        return;
       }
+      setStatus('Refining your pitch…');
+      const title = deriveTitle(text);
+      const ticker = deriveTicker(title);
+      const synopsis = deriveSynopsis(text);
+      const budget = 5000;
+      refined = { title, ticker, synopsis, budget };
+      previewTitle.textContent = title;
+      previewToken.textContent = '$' + ticker + ' (provisional ticker)';
+      previewSynopsis.textContent = synopsis;
+      previewBudget.textContent = budget.toLocaleString();
+      preview.classList.add('shown');
+      tokenizeBtn.disabled = false;
+      setStatus('Preview ready. Hit "Tokenize this pitch" to register it on the swarm.');
+    }
 
-      // 5-letter ticker derived from the title initials. Padded with
-      // X if too short. The producer swarm will append a counter when
-      // it actually mints the BSV-21 token.
-      function deriveTicker(title) {
-        const initials = title
-          .split(/\s+/)
-          .map((w) => w[0])
-          .filter((c) => /[A-Za-z]/.test(c))
-          .join('')
-          .toUpperCase()
-          .slice(0, 5);
-        return (initials + 'XXXXX').slice(0, 5);
-      }
-
-      function deriveSynopsis(text) {
-        const trimmed = text.trim().replace(/\s+/g, ' ');
-        if (trimmed.length > 240) return trimmed;
-        return (
-          trimmed +
-          (trimmed.endsWith('.') ? ' ' : '. ') +
-          'A bMovies producer agent will brief a four-role team — writer, ' +
-          'director, storyboard, composer — each spending raised capital on ' +
-          'BSVAPI to deliver real on-chain artifacts.'
+    function showPayBlock() {
+      if (!refined) return;
+      if (!config || !config.receiveAddress) {
+        setStatus(
+          'Pay-to-register is not yet open on this instance. Check back soon.',
+          'error',
         );
+        return;
       }
+      payAmount.textContent = (config.minSats || 1000).toLocaleString() + ' sats';
+      payAddress.textContent = config.receiveAddress;
+      payBlock.classList.add('shown');
+      payTxid.focus();
+      setStatus('Send the payment from any BSV wallet, then paste the txid below.');
+    }
 
-      function refine() {
-        const text = input.value.trim();
-        if (text.length < 8) {
-          status.textContent = 'Add a few more words so the agent has something to work with.';
-          status.classList.add('error');
+    async function submitPaidPitch() {
+      if (!refined || !supabase) return;
+      const txid = payTxid.value.trim().toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(txid)) {
+        setStatus('Txid must be 64 hex characters.', 'error');
+        return;
+      }
+      paySubmit.disabled = true;
+      setStatus('Submitting your pitch to the swarm…');
+      try {
+        const { error } = await supabase.from('bct_pitches').insert({
+          title: refined.title,
+          ticker: refined.ticker,
+          synopsis: refined.synopsis,
+          budget_sats: refined.budget,
+          payment_address: config.receiveAddress,
+          payment_txid: txid,
+          status: 'pending',
+        });
+        if (error) {
+          if (/duplicate|unique/i.test(error.message)) {
+            setStatus('That txid has already been submitted.', 'error');
+          } else {
+            setStatus('Submission failed: ' + error.message, 'error');
+          }
+          paySubmit.disabled = false;
           return;
         }
-        status.textContent = 'Refining your pitch…';
-        status.classList.remove('error');
-        // Synchronous refinement for the MVP — Task 36 will swap this
-        // for a server-side BSVAPI call that takes a few seconds.
-        const title = deriveTitle(text);
-        const ticker = deriveTicker(title);
-        const synopsis = deriveSynopsis(text);
-        const budget = 5000;
-        refined = { title, ticker, synopsis, budget };
-        previewTitle.textContent = title;
-        previewToken.textContent = '$' + ticker + ' (provisional ticker)';
-        previewSynopsis.textContent = synopsis;
-        previewBudget.textContent = budget.toLocaleString();
-        preview.classList.add('shown');
-        tokenizeBtn.disabled = false;
-        status.textContent = 'Preview ready. Hit "Tokenize this pitch" to register it on the swarm.';
-      }
-
-      function tokenize() {
-        if (!refined) return;
-        status.textContent = 'Pay-to-register flow coming next — for now, your pitch is queued in localStorage.';
-        // Persist locally so the next deploy of the registration API
-        // can pick up any queued pitches the visitor created. Wire to
-        // the real API in Task 36.
-        try {
-          const queue = JSON.parse(localStorage.getItem('bmovies_pitch_queue') || '[]');
-          queue.push({ ...refined, ts: Date.now() });
-          localStorage.setItem('bmovies_pitch_queue', JSON.stringify(queue));
-        } catch {}
+        setStatus(
+          'Submitted. The verifier polls every 30s — your pitch will appear on the leaderboard once payment is confirmed.',
+          'success',
+        );
+        paySubmit.textContent = 'Submitted ✓';
         tokenizeBtn.disabled = true;
-        tokenizeBtn.textContent = 'Queued ✓';
+      } catch (err) {
+        setStatus('Submission error: ' + (err && err.message ? err.message : err), 'error');
+        paySubmit.disabled = false;
       }
+    }
 
-      refineBtn.addEventListener('click', refine);
-      tokenizeBtn.addEventListener('click', tokenize);
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) refine();
+    refineBtn.addEventListener('click', refine);
+    tokenizeBtn.addEventListener('click', showPayBlock);
+    paySubmit.addEventListener('click', submitPaidPitch);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) refine();
+    });
+
+    // Load pitch-config.json once at startup. Failures are silent —
+    // the widget still renders, just without the pay flow enabled.
+    fetch('pitch-config.json', { cache: 'no-cache' })
+      .then((r) => r.json())
+      .then((cfg) => {
+        config = cfg;
+        if (config.supabaseUrl && config.supabaseAnonKey) {
+          supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+        }
+      })
+      .catch((err) => {
+        console.warn('pitch-config.json fetch failed:', err);
       });
-    })();
   </script>
 
   <script type="module">

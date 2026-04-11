@@ -44,6 +44,8 @@ import type { TokenHolderShare } from '../src/agents/piece-payment.js';
 import { UtxoPool } from '../src/agents/utxo-pool.js';
 import { ArcBroadcaster, type TxBroadcaster } from '../src/payment/broadcaster.js';
 import { registryFromEnv, type SupabaseRegistry } from '../src/agents/registry-supabase.js';
+import { PitchVerifier } from '../src/agents/pitch-verifier.js';
+import { createClient } from '@supabase/supabase-js';
 
 function parseFlags(argv: string[]): Record<string, string | boolean> {
   const out: Record<string, string | boolean> = {};
@@ -226,6 +228,44 @@ async function main() {
     );
   }
 
+  // Start the pitch verifier when the runner has both Supabase
+  // service-role credentials AND a configured pitch receive address.
+  // It polls bct_pitches every 30s, verifies payment via WoC, and
+  // turns verified pitches into real bct_offers rows that the
+  // producer agents pick up automatically on their next tick.
+  let pitchVerifier: PitchVerifier | null = null;
+  const pitchAddress = process.env.PITCH_RECEIVE_ADDRESS;
+  const pitchSupaUrl =
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const pitchSupaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (pitchAddress && pitchSupaUrl && pitchSupaKey) {
+    const pitchProducerRec = config.agents.find((a) => a.role === 'producer');
+    if (!pitchProducerRec) {
+      console.warn(
+        '[PitchVerifier] no producer in config — visitor pitches will not be picked up',
+      );
+    } else {
+      const supa = createClient(pitchSupaUrl, pitchSupaKey, {
+        auth: { persistSession: false },
+      });
+      pitchVerifier = new PitchVerifier({
+        supabase: supa,
+        receiveAddress: pitchAddress,
+        minSats: Number(process.env.PITCH_MIN_SATS ?? 1000),
+        producerAgentId: pitchProducerRec.id,
+        producerAddress: new Wallet(pitchProducerRec.wif).address,
+      });
+      pitchVerifier.start();
+      console.log(
+        `[PitchVerifier] watching bct_pitches → ${pitchAddress} (min ${process.env.PITCH_MIN_SATS ?? 1000} sats)`,
+      );
+    }
+  } else if (pitchAddress) {
+    console.log(
+      '[PitchVerifier] PITCH_RECEIVE_ADDRESS set but Supabase env missing; skipping',
+    );
+  }
+
   // Watch the registry for newly funded offers and spawn a streaming
   // loop for each. The loop calls the viewer wallet's UTXOs directly
   // via broadcastPiecePayment.
@@ -286,6 +326,7 @@ async function main() {
     clearInterval(reaper);
     for (const loop of activeLoops.values()) loop.stop();
     swarm.stop();
+    pitchVerifier?.stop();
     persistentRegistry?.stop();
     try {
       await app.close();
