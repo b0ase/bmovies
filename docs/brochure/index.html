@@ -584,25 +584,61 @@
       );
     }
 
-    function refine() {
+    async function refine() {
       const text = input.value.trim();
       if (text.length < 8) {
         setStatus('Add a few more words so the agent has something to work with.', 'error');
         return;
       }
-      setStatus('Refining your pitch…');
-      const title = deriveTitle(text);
-      const ticker = deriveTicker(title);
-      const synopsis = deriveSynopsis(text);
+      refineBtn.disabled = true;
+      setStatus('Refining your pitch via Grok…');
+
+      // Call the Vercel serverless function at /api/refine which
+      // hits xAI / Grok with a real system prompt. If the call
+      // fails (network, bad key, upstream down), fall back to the
+      // local template refiner so the UI still renders something.
+      let title, ticker, synopsis, suggestedTier;
+      try {
+        const res = await fetch('/api/refine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idea: text }),
+        });
+        if (!res.ok) {
+          throw new Error('refine endpoint returned ' + res.status);
+        }
+        const body = await res.json();
+        title = body.title;
+        ticker = body.ticker;
+        synopsis = body.synopsis;
+        suggestedTier = body.suggestedTier;
+      } catch (err) {
+        console.warn('Refine API failed, falling back to template:', err);
+        title = deriveTitle(text);
+        ticker = deriveTicker(title);
+        synopsis = deriveSynopsis(text);
+        suggestedTier = null;
+      }
+
       refined = { title, ticker, synopsis };
       previewTitle.textContent = title;
       previewToken.textContent = '$' + ticker + ' (provisional ticker)';
       previewSynopsis.textContent = synopsis;
       preview.classList.add('shown');
       tierPicker.classList.add('shown');
+      // Honor Grok's suggested tier if it returned one and it's
+      // valid; otherwise keep whatever the visitor last picked.
+      if (suggestedTier && TIERS[suggestedTier]) {
+        selectedTier = suggestedTier;
+      }
       paintSelectedTier();
       tokenizeBtn.disabled = false;
-      setStatus('Preview ready. Pick a production tier, then tokenize.');
+      refineBtn.disabled = false;
+      setStatus(
+        suggestedTier
+          ? 'Preview ready. Grok suggested the ' + suggestedTier + ' tier — override below if you disagree.'
+          : 'Preview ready. Pick a production tier, then tokenize.',
+      );
     }
 
     function paintSelectedTier() {

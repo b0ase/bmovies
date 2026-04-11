@@ -7,6 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p api/tsconfig.json",
     "dev": "tsx scripts/seed-multi.ts",
     "start": "tsx scripts/seed-multi.ts",
     "test": "vitest run",
