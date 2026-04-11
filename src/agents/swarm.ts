@@ -215,9 +215,25 @@ export function buildSwarm(
                     ),
                     new ComposerAgent(mkIdentity('composer'), wallet, roleCfg),
                   ];
-                  const results = await Promise.allSettled(
-                    team.map((r) => r.execute(offer)),
-                  );
+                  // Run roles SEQUENTIALLY, not in parallel. All four
+                  // share the producer's wallet — running them in
+                  // parallel makes them race for the same UTXO and
+                  // ARC rejects 3/4 with DOUBLE_SPEND_ATTEMPTED. The
+                  // serialised path is slower (~30s for 4 BSVAPI
+                  // round-trips) but each role consumes a UTXO, the
+                  // wallet's change output flows into the next role,
+                  // and every broadcast is unique.
+                  const results: PromiseSettledResult<
+                    Awaited<ReturnType<RoleAgent['execute']>>
+                  >[] = [];
+                  for (const r of team) {
+                    try {
+                      const value = await r.execute(offer);
+                      results.push({ status: 'fulfilled', value });
+                    } catch (reason) {
+                      results.push({ status: 'rejected', reason });
+                    }
+                  }
                   let successes = 0;
                   results.forEach((res, i) => {
                     const role = team[i].role;
