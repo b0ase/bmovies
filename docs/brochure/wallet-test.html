@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bMovies — BRC-100 wallet test</title>
+  <meta name="description" content="Test harness for the bMovies BRC-100 wallet primitive. Detects a BSV Desktop / Metanet Client instance and performs a live payment." />
+  <link rel="icon" type="image/png" href="bmovies_OG.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; }
+    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 4.5rem; font-weight: 900; letter-spacing: -0.04em; line-height: 0.85; color: #000; text-transform: uppercase; max-height: 4.2rem; overflow: hidden; }
+    .tagline { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-top: 0.8rem; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; max-width: 1400px; margin: 0 auto; }
+    nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    nav a:hover { color: #000; }
+    nav a.active { color: #000; border-color: #000; }
+    main { max-width: 1400px; margin: 0 auto; padding: 4rem 3rem; }
+
+    .intro {
+      padding-bottom: 2.5rem; margin-bottom: 2.5rem;
+      border-bottom: 1px solid #000; max-width: 980px;
+    }
+    .intro .kicker {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #999; font-weight: 700; margin-bottom: 0.8rem;
+    }
+    .intro h2 {
+      font-size: 2.6rem; font-weight: 900; letter-spacing: -0.03em;
+      line-height: 1; text-transform: uppercase;
+    }
+    .intro p {
+      font-size: 0.95rem; color: #555; line-height: 1.6; margin-top: 1rem;
+    }
+
+    .panel {
+      border: 2px solid #000; padding: 2rem; margin-top: 2rem;
+      max-width: 720px;
+    }
+    .panel .kicker {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .panel h3 {
+      font-size: 1.6rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.02em; margin-top: 0.4rem;
+    }
+    .panel p {
+      font-size: 0.85rem; color: #555; line-height: 1.55; margin-top: 0.8rem;
+    }
+
+    .status-grid {
+      display: grid; grid-template-columns: auto 1fr; gap: 0.6rem 1.2rem;
+      margin-top: 1.2rem; font-size: 0.8rem;
+    }
+    .status-grid .k {
+      font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #999; font-weight: 700; align-self: center;
+    }
+    .status-grid .v {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem;
+      word-break: break-all;
+    }
+    .status-grid .v.good { color: #060; font-weight: 700; }
+    .status-grid .v.bad { color: #c00; font-weight: 700; }
+    .status-grid .v.idle { color: #999; }
+
+    button {
+      border: 1px solid #000; background: #fff; color: #000;
+      font-family: inherit; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.8rem 1.4rem; cursor: pointer; margin-top: 1.2rem;
+    }
+    button.primary { background: #000; color: #fff; }
+    button:hover:not(:disabled) { background: #222; color: #fff; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; background: #fff; color: #000; }
+
+    .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    .pay-form {
+      margin-top: 1.2rem; display: grid;
+      grid-template-columns: 1fr; gap: 0.6rem;
+    }
+    .pay-form label {
+      font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .pay-form input {
+      padding: 0.7rem; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.8rem; border: 1px solid #000; background: #fff;
+    }
+    .pay-form input:focus { outline: 2px solid #000; outline-offset: -1px; }
+
+    .result {
+      margin-top: 1rem; padding: 1rem; border: 1px solid #000;
+      background: #fafafa; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem; word-break: break-all;
+      display: none;
+    }
+    .result.shown { display: block; }
+    .result.error { background: #fff5f5; border-color: #c00; color: #900; }
+    .result.success { background: #f5fdf5; border-color: #060; color: #064; }
+
+    .install-prompt {
+      margin-top: 1.5rem; padding: 1.2rem 1.4rem;
+      border: 2px solid #000; background: #fafafa;
+    }
+    .install-prompt h4 {
+      font-size: 0.95rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em;
+    }
+    .install-prompt p { font-size: 0.78rem; color: #444; margin-top: 0.5rem; line-height: 1.55; }
+    .install-prompt .cta-row { margin-top: 1rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .install-prompt a {
+      display: inline-block; padding: 0.7rem 1.2rem; text-decoration: none;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; border: 1px solid #000; color: #000;
+    }
+    .install-prompt a.primary { background: #000; color: #fff; }
+
+    a.tx-link { color: #000; font-weight: 700; border-bottom: 1px solid #000; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BMOVIES</h1>
+    <div class="tagline">BRC-100 wallet test harness</div>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html">Productions</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="wallet-test.html" class="active">Wallet test</a>
+    <a href="bMovies-Report.html">Report</a>
+    <a href="https://github.com/b0ase/bMovies">GitHub</a>
+  </nav>
+
+  <main>
+    <section class="intro">
+      <div class="kicker">Phase 3 — P3-1</div>
+      <h2>BRC-100 wallet primitive, live.</h2>
+      <p>
+        This page exercises the bMovies BRC-100 wallet primitive end-to-end: it
+        probes your machine for a BSV Desktop / Metanet Client instance, asks it
+        for a public key (triggering the wallet's permission prompt on first
+        contact), and can send a small payment of your choice from your wallet
+        to any address via <code>createAction</code>. bMovies never touches the
+        private key — the wallet signs and broadcasts.
+      </p>
+      <p style="margin-top:0.6rem;">
+        No wallet? Scroll down for the install prompt. bMovies is a BRC-100 app
+        and targets the <strong>Metanet App Catalog</strong>, not phone stores.
+      </p>
+    </section>
+
+    <div class="panel">
+      <div class="kicker">Step 1 — Detect + connect</div>
+      <h3>Wallet status</h3>
+      <div class="status-grid">
+        <div class="k">Connected</div><div class="v idle" id="s-connected">unknown</div>
+        <div class="k">Provider</div><div class="v idle" id="s-provider">—</div>
+        <div class="k">Address</div><div class="v idle" id="s-address">—</div>
+        <div class="k">Public key</div><div class="v idle" id="s-pubkey">—</div>
+      </div>
+      <div class="row">
+        <button id="btn-detect" class="primary" type="button">Detect &amp; connect</button>
+        <button id="btn-disconnect" type="button" disabled>Disconnect</button>
+      </div>
+      <div class="result" id="connect-result"></div>
+      <div class="install-prompt" id="install-prompt" style="display:none;">
+        <h4 id="ip-heading">Connect a BRC-100 wallet</h4>
+        <p id="ip-body"></p>
+        <div class="cta-row">
+          <a id="ip-primary" class="primary" target="_blank" rel="noopener">Get BSV Desktop</a>
+          <a id="ip-secondary" target="_blank" rel="noopener">What is BRC-100?</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="kicker">Step 2 — Pay something</div>
+      <h3>Send a test payment</h3>
+      <p>
+        Default destination is the bMovies pitch address. Amount defaults to 100
+        sats so you can test without burning real money. Hit <strong>Pay</strong>
+        and your wallet will open a confirmation prompt; approve it there.
+      </p>
+      <div class="pay-form">
+        <label for="pay-address">Destination address</label>
+        <input type="text" id="pay-address" value="1EUs7z64Dfm5LXFcEugJQ5dxkfNxKp7BtJ" />
+        <label for="pay-sats">Amount (sats)</label>
+        <input type="number" id="pay-sats" value="100" min="1" />
+        <label for="pay-description">Description (5–50 chars)</label>
+        <input type="text" id="pay-description" value="bMovies BRC-100 test" maxlength="50" />
+      </div>
+      <div class="row">
+        <button id="btn-pay" class="primary" type="button" disabled>Pay</button>
+      </div>
+      <div class="result" id="pay-result"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import {
+      connectWallet,
+      disconnectWallet,
+      payToAddress,
+      walletStatus,
+      walletInstallPrompt,
+    } from './js/brc100.js';
+
+    const els = {
+      connected: document.getElementById('s-connected'),
+      provider: document.getElementById('s-provider'),
+      address: document.getElementById('s-address'),
+      pubkey: document.getElementById('s-pubkey'),
+      btnDetect: document.getElementById('btn-detect'),
+      btnDisconnect: document.getElementById('btn-disconnect'),
+      btnPay: document.getElementById('btn-pay'),
+      connectResult: document.getElementById('connect-result'),
+      installPrompt: document.getElementById('install-prompt'),
+      ipHeading: document.getElementById('ip-heading'),
+      ipBody: document.getElementById('ip-body'),
+      ipPrimary: document.getElementById('ip-primary'),
+      ipSecondary: document.getElementById('ip-secondary'),
+      payAddress: document.getElementById('pay-address'),
+      paySats: document.getElementById('pay-sats'),
+      payDescription: document.getElementById('pay-description'),
+      payResult: document.getElementById('pay-result'),
+    };
+
+    function paint(status) {
+      els.connected.textContent = status.connected ? 'yes' : 'no';
+      els.connected.className = 'v ' + (status.connected ? 'good' : 'bad');
+      els.provider.textContent = status.provider ?? '—';
+      els.provider.className = 'v ' + (status.provider ? 'good' : 'idle');
+      els.address.textContent = status.address ?? '—';
+      els.address.className = 'v ' + (status.address ? 'good' : 'idle');
+      els.pubkey.textContent = status.publicKey
+        ? status.publicKey.slice(0, 20) + '…' + status.publicKey.slice(-8)
+        : '—';
+      els.pubkey.className = 'v ' + (status.publicKey ? 'good' : 'idle');
+      els.btnDisconnect.disabled = !status.connected;
+      els.btnPay.disabled = !status.connected;
+
+      if (!status.connected) {
+        const prompt = walletInstallPrompt();
+        els.ipHeading.textContent = prompt.heading;
+        els.ipBody.textContent = prompt.body;
+        els.ipPrimary.href = prompt.primary.href;
+        els.ipPrimary.textContent = prompt.primary.label;
+        els.ipSecondary.href = prompt.secondary.href;
+        els.ipSecondary.textContent = prompt.secondary.label;
+        els.installPrompt.style.display = 'block';
+      } else {
+        els.installPrompt.style.display = 'none';
+      }
+    }
+
+    function showResult(el, kind, text) {
+      el.className = 'result shown ' + kind;
+      el.innerHTML = text;
+    }
+
+    els.btnDetect.addEventListener('click', async () => {
+      els.btnDetect.disabled = true;
+      showResult(els.connectResult, '', 'Probing for BRC-100 wallet…');
+      try {
+        const status = await connectWallet();
+        paint(status);
+        if (status.connected) {
+          showResult(
+            els.connectResult,
+            'success',
+            `Connected via <strong>${status.provider}</strong>.<br>Address: ${status.address}`,
+          );
+        } else {
+          showResult(
+            els.connectResult,
+            'error',
+            'No BRC-100 wallet detected. Install BSV Desktop and refresh.' +
+              (status.error ? '<br><br>Detail: ' + status.error : ''),
+          );
+        }
+      } catch (err) {
+        showResult(els.connectResult, 'error', 'Connect threw: ' + err.message);
+      } finally {
+        els.btnDetect.disabled = false;
+      }
+    });
+
+    els.btnDisconnect.addEventListener('click', () => {
+      disconnectWallet();
+      paint(walletStatus());
+      showResult(els.connectResult, '', 'Disconnected from wallet.');
+    });
+
+    els.btnPay.addEventListener('click', async () => {
+      const address = els.payAddress.value.trim();
+      const satoshis = Number(els.paySats.value);
+      const description = els.payDescription.value.trim();
+
+      if (!address) {
+        showResult(els.payResult, 'error', 'Destination address is required.');
+        return;
+      }
+      if (!Number.isInteger(satoshis) || satoshis <= 0) {
+        showResult(els.payResult, 'error', 'Satoshis must be a positive integer.');
+        return;
+      }
+      if (description.length < 5) {
+        showResult(els.payResult, 'error', 'Description must be at least 5 chars.');
+        return;
+      }
+
+      els.btnPay.disabled = true;
+      showResult(els.payResult, '', 'Wallet prompt open — approve in your wallet.');
+      try {
+        const receipt = await payToAddress({ address, satoshis, description });
+        showResult(
+          els.payResult,
+          'success',
+          `Paid ${satoshis.toLocaleString()} sats via <strong>${receipt.provider}</strong>.<br>` +
+            `Txid: <a class="tx-link" href="https://whatsonchain.com/tx/${receipt.txid}" target="_blank" rel="noopener">${receipt.txid}</a>`,
+        );
+      } catch (err) {
+        showResult(els.payResult, 'error', 'Payment failed: ' + err.message);
+      } finally {
+        els.btnPay.disabled = false;
+      }
+    });
+
+    // Initial paint — not connected until the user clicks
+    paint(walletStatus());
+  </script>
+</body>
+</html>
