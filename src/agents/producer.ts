@@ -121,6 +121,15 @@ export class ProducerAgent extends Agent {
    * Autonomous behavior: if the producer has fewer than maxOpenOffers
    * currently open, post a new one. Transition funded offers to
    * producing status.
+   *
+   * The onOfferFunded hook is awaited one offer at a time. Fire-and-
+   * forget across offers means multiple team dispatches run in
+   * parallel and race for the same producer-wallet UTXOs, which ARC
+   * rejects with DOUBLE_SPEND_ATTEMPTED. Serialising here guarantees
+   * each team's payment broadcasts confirm before the next team
+   * starts. The Agent base class's single-tick-in-flight guard
+   * means the tick loop won't overlap even if a dispatch takes
+   * minutes.
    */
   async tick(): Promise<void> {
     // Advance funded offers to producing state and kick off content generation
@@ -134,14 +143,15 @@ export class ProducerAgent extends Agent {
         });
 
         if (this.cfg.onOfferFunded) {
-          const hook = this.cfg.onOfferFunded;
-          void hook(offer).catch((err: unknown) => {
+          try {
+            await this.cfg.onOfferFunded(offer);
+          } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             this.record({
               kind: 'error',
               message: `onOfferFunded hook failed for ${offer.id}: ${message}`,
             });
-          });
+          }
         }
       }
     }
