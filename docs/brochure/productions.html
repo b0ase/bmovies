@@ -369,11 +369,14 @@
           ? '<div class="tx">Payment: <a href="' + wocTx(heroTxid) + '" target="_blank" rel="noopener">' + esc(shortTx(heroTxid)) + '</a></div>'
           : '';
 
+        const offerHref = 'offer.html?id=' + encodeURIComponent(o.id);
         return (
           '<article class="card">' +
-            '<div class="media">' + media + '</div>' +
+            '<a href="' + offerHref + '" style="text-decoration:none;color:inherit;display:block;">' +
+              '<div class="media">' + media + '</div>' +
+            '</a>' +
             '<div class="body">' +
-              '<div class="title">' + esc(o.title) + '</div>' +
+              '<div class="title"><a href="' + offerHref + '" style="color:#000;text-decoration:none;border-bottom:1px solid transparent;">' + esc(o.title) + '</a></div>' +
               '<div class="meta">' +
                 '<div class="k">Token</div><div class="v">$' + esc(o.token_ticker) + '</div>' +
                 '<div class="k">Model</div><div class="v">' + esc(heroModel) + '</div>' +

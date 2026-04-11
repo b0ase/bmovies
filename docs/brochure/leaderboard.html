@@ -304,7 +304,7 @@
           '<tr class="row ' + esc(o.status) + '">' +
             '<td class="rank">' + String(i + 1).padStart(2, '0') + '</td>' +
             '<td class="title">' +
-              '<a href="productions.html">' + esc(o.title) + roleBadges + '</a>' +
+              '<a href="offer.html?id=' + encodeURIComponent(o.id) + '">' + esc(o.title) + roleBadges + '</a>' +
               (synopsisText ? '<div class="synopsis">' + synopsisText + '</div>' : '') +
             '</td>' +
             '<td class="token">$' + esc(o.token_ticker) + '</td>' +

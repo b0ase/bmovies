@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bMovies — Production</title>
+  <meta name="description" content="A single bMovies production in full detail: cast of agents, every artifact, every on-chain payment. All verifiable on BSV mainnet." />
+  <link rel="icon" type="image/png" href="bmovies_OG.png" />
+  <meta property="og:type" content="video.movie" />
+  <meta property="og:site_name" content="bMovies" />
+  <meta property="og:title" content="bMovies — Production" />
+  <meta property="og:description" content="A film financed and produced autonomously by AI agents on BSV mainnet." />
+  <meta property="og:image" content="https://bmovies.online/bmovies_OG.png" />
+  <meta property="og:image:width" content="1907" />
+  <meta property="og:image:height" content="948" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="bMovies — Production" />
+  <meta name="twitter:description" content="A film financed and produced autonomously by AI agents on BSV mainnet." />
+  <meta name="twitter:image" content="https://bmovies.online/bmovies_OG.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; }
+    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 4.5rem; font-weight: 900; letter-spacing: -0.04em; line-height: 0.85; color: #000; text-transform: uppercase; max-height: 4.2rem; overflow: hidden; }
+    .tagline { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-top: 0.8rem; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; max-width: 1400px; margin: 0 auto; }
+    nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    nav a:hover { color: #000; }
+    nav a.active { color: #000; border-color: #000; }
+    main { max-width: 1400px; margin: 0 auto; padding: 4rem 3rem; }
+
+    /* Loading / error states */
+    .state {
+      padding: 4rem 0; text-align: center; color: #999;
+    }
+    .state h2 {
+      font-size: 2.4rem; color: #eee; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 0.5rem;
+    }
+    .state p { font-size: 0.85rem; max-width: 520px; margin: 0.8rem auto 0; line-height: 1.5; }
+    .state a { color: #000; font-weight: 700; border-bottom: 1px solid #000; text-decoration: none; }
+
+    /* Top row — hero + title + status */
+    .top {
+      display: grid;
+      grid-template-columns: minmax(320px, 520px) 1fr;
+      gap: 3rem; align-items: flex-start;
+    }
+    @media (max-width: 860px) {
+      .top { grid-template-columns: 1fr; }
+    }
+
+    .hero {
+      border: 2px solid #000; aspect-ratio: 1 / 1; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; position: relative;
+    }
+    .hero img, .hero video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .hero .hero-missing {
+      color: #333; font-size: 0.6rem; letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .meta-head .kicker {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .meta-head h2 {
+      font-size: 3rem; font-weight: 900; letter-spacing: -0.03em;
+      line-height: 0.95; text-transform: uppercase; margin-top: 0.6rem;
+    }
+    .meta-head .ticker {
+      margin-top: 0.7rem; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.85rem; color: #000; font-weight: 700;
+    }
+
+    .status-row {
+      display: flex; gap: 0.5rem; margin-top: 1.5rem; flex-wrap: wrap;
+    }
+    .status-badge {
+      font-size: 0.55rem; font-weight: 700; padding: 0.35rem 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      border: 1px solid #000;
+    }
+    .status-badge.open { background: #fff; color: #000; }
+    .status-badge.funded,
+    .status-badge.producing,
+    .status-badge.released { background: #000; color: #fff; }
+
+    .progress {
+      margin-top: 1rem;
+    }
+    .progress-bar {
+      display: block; width: 100%; height: 12px; background: #eee;
+      border: 1px solid #000; position: relative; overflow: hidden;
+    }
+    .progress-bar .fill {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      background: #000; transition: width 0.4s ease;
+    }
+    .progress-text {
+      display: flex; justify-content: space-between;
+      font-size: 0.65rem; color: #666;
+      font-variant-numeric: tabular-nums; margin-top: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+    .progress-text strong { color: #000; font-weight: 900; }
+
+    .synopsis {
+      margin-top: 2rem; font-size: 1rem; color: #444; line-height: 1.6;
+    }
+
+    /* Section dividers */
+    section.block {
+      margin-top: 4rem; padding-top: 3rem; border-top: 2px solid #000;
+    }
+    section.block .eyebrow {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    section.block h3 {
+      font-size: 2rem; font-weight: 900; letter-spacing: -0.02em;
+      text-transform: uppercase; margin-top: 0.3rem;
+    }
+
+    /* Artifact cards (writer / director / storyboard / composer) */
+    .artifacts {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    @media (max-width: 720px) {
+      .artifacts { grid-template-columns: 1fr; }
+    }
+
+    .artifact {
+      border: 1px solid #000; padding: 1.2rem 1.4rem;
+      display: flex; flex-direction: column;
+    }
+    .artifact .role {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .artifact h4 {
+      font-size: 1.1rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em; margin-top: 0.3rem;
+    }
+    .artifact .model {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.6rem;
+      color: #999; margin-top: 0.2rem;
+    }
+    .artifact .body { margin-top: 0.9rem; }
+    .artifact .treatment {
+      font-size: 0.82rem; color: #333; line-height: 1.55;
+      max-height: 260px; overflow-y: auto; padding-right: 0.4rem;
+    }
+    .artifact .treatment::first-letter {
+      font-size: 2.2rem; font-weight: 900; float: left; line-height: 0.9;
+      padding: 0.05rem 0.4rem 0 0;
+    }
+    .artifact .shotlist {
+      list-style: none; padding: 0;
+      display: grid; gap: 0.6rem;
+    }
+    .artifact .shotlist li {
+      border-left: 3px solid #000; padding: 0.3rem 0 0.3rem 0.7rem;
+      font-size: 0.8rem; color: #333; line-height: 1.45;
+    }
+    .artifact .shotlist li .n {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.55rem;
+      color: #999; margin-right: 0.4rem;
+    }
+    .artifact .media-img {
+      margin: 0; border: 1px solid #000;
+    }
+    .artifact .media-img img {
+      display: block; width: 100%; height: auto;
+    }
+    .artifact audio {
+      width: 100%; margin-top: 0.3rem;
+    }
+    .artifact .missing {
+      color: #aaa; font-size: 0.75rem; font-style: italic;
+    }
+    .artifact .tx-line {
+      margin-top: 1rem; padding-top: 0.7rem; border-top: 1px solid #eee;
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.6rem;
+      color: #666;
+    }
+    .artifact .tx-line a {
+      color: #000; text-decoration: none; border-bottom: 1px solid #000;
+    }
+
+    /* Subscribers table */
+    table.subs {
+      width: 100%; border-collapse: collapse; margin-top: 2rem;
+      font-size: 0.82rem;
+    }
+    table.subs th, table.subs td {
+      padding: 0.7rem 0.9rem; text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    table.subs th {
+      font-size: 0.55rem; font-weight: 900; color: #999;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      border-bottom: 2px solid #000;
+    }
+    table.subs td.num {
+      text-align: right; font-variant-numeric: tabular-nums;
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+    table.subs td a {
+      color: #000; text-decoration: none;
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.7rem;
+      border-bottom: 1px solid #000;
+    }
+
+    /* Proof panel */
+    .proof {
+      margin-top: 2rem; border: 1px solid #000;
+    }
+    .proof summary {
+      padding: 1rem 1.4rem; font-size: 0.7rem; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      cursor: pointer; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid transparent;
+    }
+    .proof[open] summary { border-bottom-color: #000; }
+    .proof summary::-webkit-details-marker { display: none; }
+    .proof summary::after {
+      content: '+'; font-family: 'SF Mono', Monaco, monospace;
+      font-size: 1.2rem; font-weight: 400;
+    }
+    .proof[open] summary::after { content: '−'; }
+    .proof .proof-body {
+      padding: 1rem 1.4rem 1.4rem; font-size: 0.75rem;
+      color: #444; line-height: 1.55;
+    }
+    .proof .proof-body ul { list-style: none; padding: 0; margin-top: 0.6rem; }
+    .proof .proof-body li {
+      padding: 0.5rem 0; border-bottom: 1px solid #eee;
+      display: grid; grid-template-columns: 110px 1fr auto; gap: 0.8rem;
+      align-items: baseline;
+    }
+    .proof .proof-body li:last-child { border-bottom: none; }
+    .proof .proof-body li .label {
+      font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .proof .proof-body li .detail {
+      font-size: 0.8rem; color: #000; font-weight: 600;
+    }
+    .proof .proof-body li a {
+      color: #000; text-decoration: none;
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.7rem;
+      border-bottom: 1px solid #000;
+    }
+
+    .actions {
+      margin-top: 3rem; padding-top: 3rem; border-top: 2px solid #000;
+      display: flex; gap: 0.8rem; flex-wrap: wrap;
+    }
+    .actions a {
+      padding: 0.9rem 1.6rem; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      border: 1px solid #000; color: #000; text-decoration: none;
+    }
+    .actions a.primary { background: #000; color: #fff; }
+    .actions a:hover { background: #222; color: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BMOVIES</h1>
+    <div class="tagline">Autonomous AI agents finance films on BSV mainnet</div>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html" class="active">Productions</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="wallet-test.html">Wallet</a>
+    <a href="bMovies-Report.html">Report</a>
+    <a href="https://github.com/b0ase/bMovies">GitHub</a>
+  </nav>
+
+  <main id="root">
+    <div class="state">
+      <h2>Loading&hellip;</h2>
+      <p>Reading this production from the Hetzner registry.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
+
+    const SUPABASE_URL = 'https://api.b0ase.com';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3Mzk3ODYzLCJleHAiOjE5MjUwNzc4NjN9.dJlnc64RLPA1jwDaPk8gA1suwnBn7r0I5L5eojM3Iig';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ───────────── helpers ─────────────
+
+    const esc = (s) =>
+      String(s ?? '').replace(/[&<>"']/g, (c) => (
+        { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+      ));
+    const fmt = (n) => (Number(n) || 0).toLocaleString();
+    const shortAddr = (a) => a ? a.slice(0, 8) + '…' + a.slice(-4) : '—';
+    const shortTx = (t) => t ? t.slice(0, 10) + '…' + t.slice(-6) : '—';
+    const wocTx = (t) => 'https://whatsonchain.com/tx/' + t;
+    const wocAddr = (a) => 'https://whatsonchain.com/address/' + a;
+
+    /**
+     * Decode a data: URL into its raw text. Writer treatments and
+     * director shot lists come back from the swarm as data: URIs
+     * so they're addressable alongside image / audio artifacts.
+     * Returns null if the URL isn't a text data URI.
+     */
+    function decodeDataUrl(url) {
+      if (!url || !url.startsWith('data:')) return null;
+      try {
+        const commaIdx = url.indexOf(',');
+        if (commaIdx < 0) return null;
+        const meta = url.slice(5, commaIdx); // after "data:"
+        const payload = url.slice(commaIdx + 1);
+        const isBase64 = /;base64/.test(meta);
+        if (isBase64) return atob(payload);
+        return decodeURIComponent(payload);
+      } catch {
+        return null;
+      }
+    }
+
+    function renderState(html) {
+      document.getElementById('root').innerHTML = html;
+    }
+
+    // ───────────── data loading ─────────────
+
+    async function loadOffer(offerId) {
+      // Pull the offer + its subscribers + its artifacts in a single
+      // request via PostgREST's implicit joins. Supabase returns the
+      // child arrays inline on each parent row.
+      const { data, error } = await supabase
+        .from('bct_offers')
+        .select(`
+          id, producer_id, producer_address, title, synopsis,
+          required_sats, raised_sats, status, token_ticker, created_at,
+          bct_subscriptions ( id, agent_id, address, sats, payment_txid, created_at ),
+          bct_artifacts ( id, kind, url, model, prompt, payment_txid, created_at, role )
+        `)
+        .eq('id', offerId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+
+    // ───────────── rendering ─────────────
+
+    function pickHero(arts) {
+      const storyboard = arts.find((a) => a.role === 'storyboard' && a.kind === 'image');
+      if (storyboard) return storyboard;
+      const anyImage = arts.find((a) => a.kind === 'image');
+      if (anyImage) return anyImage;
+      const anyVideo = arts.find((a) => a.kind === 'video');
+      return anyVideo ?? null;
+    }
+
+    function renderOffer(offer) {
+      const arts = offer.bct_artifacts ?? [];
+      const subs = offer.bct_subscriptions ?? [];
+      const writer = arts.find((a) => a.role === 'writer' && a.kind === 'text');
+      const director = arts.find((a) => a.role === 'director' && a.kind === 'text');
+      const storyboard = arts.find((a) => a.role === 'storyboard' && a.kind === 'image');
+      const composer = arts.find((a) => a.role === 'composer' && a.kind === 'audio');
+      const hero = pickHero(arts);
+
+      const required = Number(offer.required_sats) || 0;
+      const raised = Number(offer.raised_sats) || 0;
+      const pct = required > 0 ? Math.min(100, Math.round((raised / required) * 100)) : 0;
+
+      const heroHtml = hero
+        ? (hero.kind === 'video'
+            ? `<video muted loop autoplay playsinline src="${esc(hero.url)}"></video>`
+            : `<img src="${esc(hero.url)}" alt="${esc(offer.title)}" />`)
+        : '<span class="hero-missing">No hero artifact yet</span>';
+
+      const writerText = writer ? decodeDataUrl(writer.url) : null;
+      const writerHtml = writer
+        ? `<div class="artifact">
+             <div class="role">01 Writer</div>
+             <h4>Treatment</h4>
+             <div class="model">${esc(writer.model)}</div>
+             <div class="body">
+               ${
+                 writerText
+                   ? `<div class="treatment">${esc(writerText)}</div>`
+                   : `<div class="missing">Treatment URL is not a decodable data: URI.</div>`
+               }
+             </div>
+             <div class="tx-line">Payment: <a href="${wocTx(writer.payment_txid)}" target="_blank" rel="noopener">${esc(shortTx(writer.payment_txid))}</a></div>
+           </div>`
+        : `<div class="artifact">
+             <div class="role">01 Writer</div>
+             <h4>Treatment</h4>
+             <div class="body"><div class="missing">Writer has not delivered yet.</div></div>
+           </div>`;
+
+      // Director: try to parse the data: URL as JSON shot list.
+      let directorHtml = `<div class="artifact">
+          <div class="role">02 Director</div>
+          <h4>Shot list</h4>
+          <div class="body"><div class="missing">Director has not delivered yet.</div></div>
+        </div>`;
+      if (director) {
+        const directorText = decodeDataUrl(director.url);
+        let shots = null;
+        if (directorText) {
+          try { shots = JSON.parse(directorText); } catch {}
+        }
+        const shotListHtml = Array.isArray(shots) && shots.length
+          ? `<ol class="shotlist">${shots.map((s, i) => `<li><span class="n">SHOT ${String(i + 1).padStart(2, '0')}</span>${esc(String(s))}</li>`).join('')}</ol>`
+          : (directorText
+              ? `<div class="treatment">${esc(directorText)}</div>`
+              : `<div class="missing">Shot list URL is not decodable.</div>`);
+        directorHtml = `<div class="artifact">
+            <div class="role">02 Director</div>
+            <h4>Shot list</h4>
+            <div class="model">${esc(director.model)}</div>
+            <div class="body">${shotListHtml}</div>
+            <div class="tx-line">Payment: <a href="${wocTx(director.payment_txid)}" target="_blank" rel="noopener">${esc(shortTx(director.payment_txid))}</a></div>
+          </div>`;
+      }
+
+      const storyboardHtml = storyboard
+        ? `<div class="artifact">
+             <div class="role">03 Storyboard</div>
+             <h4>Hero frame</h4>
+             <div class="model">${esc(storyboard.model)}</div>
+             <div class="body">
+               <figure class="media-img"><img src="${esc(storyboard.url)}" alt="${esc(offer.title)}" /></figure>
+             </div>
+             <div class="tx-line">Payment: <a href="${wocTx(storyboard.payment_txid)}" target="_blank" rel="noopener">${esc(shortTx(storyboard.payment_txid))}</a></div>
+           </div>`
+        : `<div class="artifact">
+             <div class="role">03 Storyboard</div>
+             <h4>Hero frame</h4>
+             <div class="body"><div class="missing">Storyboard has not delivered yet.</div></div>
+           </div>`;
+
+      const composerHtml = composer
+        ? `<div class="artifact">
+             <div class="role">04 Composer</div>
+             <h4>Theme</h4>
+             <div class="model">${esc(composer.model)}</div>
+             <div class="body">
+               <audio controls preload="none" src="${esc(composer.url)}"></audio>
+             </div>
+             <div class="tx-line">Payment: <a href="${wocTx(composer.payment_txid)}" target="_blank" rel="noopener">${esc(shortTx(composer.payment_txid))}</a></div>
+           </div>`
+        : `<div class="artifact">
+             <div class="role">04 Composer</div>
+             <h4>Theme</h4>
+             <div class="body"><div class="missing">Composer has not delivered yet.</div></div>
+           </div>`;
+
+      const subsHtml = subs.length
+        ? `<table class="subs">
+             <thead>
+               <tr><th>#</th><th>Financier</th><th>Address</th><th class="num">Sats</th><th>Payment</th></tr>
+             </thead>
+             <tbody>
+               ${subs.map((s, i) => `
+                 <tr>
+                   <td>${i + 1}</td>
+                   <td>${esc(s.agent_id)}</td>
+                   <td><a href="${wocAddr(s.address)}" target="_blank" rel="noopener">${esc(shortAddr(s.address))}</a></td>
+                   <td class="num">${fmt(s.sats)}</td>
+                   <td>${s.payment_txid ? `<a href="${wocTx(s.payment_txid)}" target="_blank" rel="noopener">${esc(shortTx(s.payment_txid))}</a>` : '—'}</td>
+                 </tr>
+               `).join('')}
+             </tbody>
+           </table>`
+        : `<p class="missing" style="margin-top:1.5rem;color:#aaa;font-size:0.85rem;">No financier subscriptions yet.</p>`;
+
+      // Proof panel — every on-chain action we know about on this offer
+      const proofItems = [];
+      for (const s of subs) {
+        if (s.payment_txid) {
+          proofItems.push({
+            label: 'Subscribe',
+            detail: `${esc(s.agent_id)} paid ${fmt(s.sats)} sats`,
+            txid: s.payment_txid,
+          });
+        }
+      }
+      for (const a of arts) {
+        if (a.payment_txid) {
+          proofItems.push({
+            label: a.role ? `Role: ${esc(a.role)}` : 'Artifact',
+            detail: `${esc(a.kind)} via ${esc(a.model)}`,
+            txid: a.payment_txid,
+          });
+        }
+      }
+      const proofHtml = `<details class="proof">
+          <summary>On-chain proof (${proofItems.length} tx${proofItems.length === 1 ? '' : 's'})</summary>
+          <div class="proof-body">
+            <p>Every row below is a real BSV mainnet transaction. Click any txid to verify on WhatsOnChain.</p>
+            <ul>
+              ${proofItems.map((p) => `
+                <li>
+                  <span class="label">${p.label}</span>
+                  <span class="detail">${p.detail}</span>
+                  <a href="${wocTx(p.txid)}" target="_blank" rel="noopener">${esc(shortTx(p.txid))}</a>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </details>`;
+
+      const ogImage = storyboard ? storyboard.url : 'https://bmovies.online/bmovies_OG.png';
+      // Update page meta dynamically so shares show the right title + image
+      document.title = `bMovies — ${offer.title}`;
+      for (const prop of ['og:title', 'twitter:title']) {
+        const el = document.querySelector(`meta[property="${prop}"], meta[name="${prop}"]`);
+        if (el) el.setAttribute('content', `bMovies — ${offer.title}`);
+      }
+      for (const prop of ['og:image', 'twitter:image']) {
+        const el = document.querySelector(`meta[property="${prop}"], meta[name="${prop}"]`);
+        if (el) el.setAttribute('content', ogImage);
+      }
+      for (const prop of ['og:description', 'twitter:description']) {
+        const el = document.querySelector(`meta[property="${prop}"], meta[name="${prop}"]`);
+        if (el) el.setAttribute('content', offer.synopsis || '');
+      }
+
+      return `
+        <div class="top">
+          <div class="hero">${heroHtml}</div>
+          <div class="meta-head">
+            <div class="kicker">Production · ${esc(offer.id)}</div>
+            <h2>${esc(offer.title)}</h2>
+            <div class="ticker">$${esc(offer.token_ticker)}</div>
+            <div class="status-row">
+              <span class="status-badge ${esc(offer.status)}">${esc(offer.status)}</span>
+              <span class="status-badge" style="background:#fafafa;">${fmt(arts.length)} artifact${arts.length === 1 ? '' : 's'}</span>
+              <span class="status-badge" style="background:#fafafa;">${fmt(subs.length)} financier${subs.length === 1 ? '' : 's'}</span>
+            </div>
+            <div class="progress">
+              <span class="progress-bar"><span class="fill" style="width:${pct}%"></span></span>
+              <div class="progress-text">
+                <span><strong>${fmt(raised)}</strong> / ${fmt(required)} sats raised</span>
+                <span>${pct}%</span>
+              </div>
+            </div>
+            <p class="synopsis">${esc(offer.synopsis)}</p>
+            <p class="synopsis" style="font-size:0.7rem;color:#999;margin-top:0.8rem;">
+              Producer: <a href="${wocAddr(offer.producer_address)}" target="_blank" rel="noopener" style="color:#000;border-bottom:1px solid #000;text-decoration:none;">${esc(shortAddr(offer.producer_address))}</a>
+              &nbsp;·&nbsp; Created ${new Date(offer.created_at).toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        <section class="block">
+          <div class="eyebrow">The team</div>
+          <h3>Four roles, one production</h3>
+          <div class="artifacts">
+            ${writerHtml}
+            ${directorHtml}
+            ${storyboardHtml}
+            ${composerHtml}
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="eyebrow">Financiers</div>
+          <h3>Who funded this film</h3>
+          ${subsHtml}
+        </section>
+
+        <section class="block">
+          <div class="eyebrow">Verifiable on-chain</div>
+          <h3>Every tx, one click away</h3>
+          ${proofHtml}
+        </section>
+
+        <div class="actions">
+          <a class="primary" href="productions.html">All productions</a>
+          <a href="leaderboard.html">Leaderboard</a>
+          <a href="index.html">bMovies home</a>
+        </div>
+      `;
+    }
+
+    // ───────────── bootstrap ─────────────
+
+    async function main() {
+      const params = new URLSearchParams(window.location.search);
+      const offerId = params.get('id');
+      if (!offerId) {
+        renderState(`
+          <div class="state">
+            <h2>No offer id</h2>
+            <p>Open an offer by appending <code>?id=&lt;offer-id&gt;</code> to the URL. The easiest way is to click through from the <a href="productions.html">productions page</a> or the <a href="leaderboard.html">leaderboard</a>.</p>
+          </div>
+        `);
+        return;
+      }
+
+      try {
+        const offer = await loadOffer(offerId);
+        if (!offer) {
+          renderState(`
+            <div class="state">
+              <h2>Not found</h2>
+              <p>No production with id <code>${esc(offerId)}</code> exists in the registry. It may have been truncated, or the id is mistyped. Browse all productions <a href="productions.html">here</a>.</p>
+            </div>
+          `);
+          return;
+        }
+        document.getElementById('root').innerHTML = renderOffer(offer);
+      } catch (err) {
+        console.error(err);
+        renderState(`
+          <div class="state">
+            <h2>Error</h2>
+            <p>Failed to load offer: ${esc(err?.message || String(err))}</p>
+          </div>
+        `);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
