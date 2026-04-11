@@ -200,7 +200,7 @@ export function createBctPayExtension(options: BctPayOptions) {
     // ─── Message handlers ──────────────────────────────────────
 
     /** Seeder receives CHANNEL_OPEN → creates channel, sends CHANNEL_ACCEPT */
-    private _handleChannelOpen(msg: ChannelOpenMsg) {
+    _handleChannelOpen(msg: ChannelOpenMsg) {
       if (role !== 'seeder') return;
 
       const config: ChannelConfig = {
@@ -226,7 +226,7 @@ export function createBctPayExtension(options: BctPayOptions) {
     }
 
     /** Leecher receives CHANNEL_ACCEPT → creates their channel view, funds it */
-    private _handleChannelAccept(msg: ChannelAcceptMsg) {
+    _handleChannelAccept(msg: ChannelAcceptMsg) {
       if (role !== 'leecher') return;
 
       const config: ChannelConfig = {
@@ -245,7 +245,7 @@ export function createBctPayExtension(options: BctPayOptions) {
     }
 
     /** Seeder receives CHANNEL_FUNDED → marks channel as open */
-    private _handleChannelFunded(msg: ChannelFundedMsg) {
+    _handleChannelFunded(msg: ChannelFundedMsg) {
       if (role !== 'seeder' || !this.channel) return;
 
       // In production: verify the funding tx is in mempool
@@ -256,7 +256,7 @@ export function createBctPayExtension(options: BctPayOptions) {
     }
 
     /** Seeder receives PIECE_PAYMENT → validates, acks, releases piece */
-    private _handlePiecePayment(msg: PiecePaymentMsg) {
+    _handlePiecePayment(msg: PiecePaymentMsg) {
       if (role !== 'seeder' || !this.channel) return;
 
       try {
@@ -286,7 +286,7 @@ export function createBctPayExtension(options: BctPayOptions) {
     }
 
     /** Leecher receives PAYMENT_ACK → piece is released for download */
-    private _handlePaymentAck(msg: PaymentAckMsg) {
+    _handlePaymentAck(msg: PaymentAckMsg) {
       if (role !== 'leecher') return;
 
       this.pendingPieces.delete(msg.pieceIndex);
@@ -295,7 +295,7 @@ export function createBctPayExtension(options: BctPayOptions) {
     }
 
     /** Either side receives CHANNEL_CLOSE */
-    private _handleChannelClose(msg: ChannelCloseMsg) {
+    _handleChannelClose(msg: ChannelCloseMsg) {
       if (!this.channel) return;
 
       // Seeder: broadcast the settlement tx
@@ -310,7 +310,7 @@ export function createBctPayExtension(options: BctPayOptions) {
 
     // ─── Internal ──────────────────────────────────────────────
 
-    private _send(msg: BctMessage): void {
+    _send(msg: BctMessage): void {
       const buf = encodeMessage(msg);
       this.wire.extended('bct_pay', buf);
     }

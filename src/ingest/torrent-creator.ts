@@ -6,13 +6,25 @@
  */
 
 import createTorrent from 'create-torrent';
-import { promisify } from 'node:util';
 import { readFile, writeFile } from 'node:fs/promises';
 import { stat } from 'node:fs/promises';
 import parseTorrent, { toMagnetURI } from 'parse-torrent';
 import { DEFAULTS, DEFAULT_TRACKERS } from '../types/config.js';
 
-const createTorrentAsync = promisify(createTorrent);
+// Explicit Promise wrapper instead of node:util.promisify because
+// promisify only sees the first overload of a function and would
+// drop the opts argument from create-torrent's signature.
+function createTorrentAsync(
+  input: Parameters<typeof createTorrent>[0],
+  opts: Parameters<typeof createTorrent>[1],
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    createTorrent(input, opts as never, (err, torrent) => {
+      if (err) reject(err);
+      else resolve(torrent);
+    });
+  });
+}
 
 export interface TorrentCreateOptions {
   /** Path to the fMP4 file */

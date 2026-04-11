@@ -15,6 +15,16 @@
 
 import type { ContentManifest } from '../types/torrent.js';
 
+interface ManifestResponse402 {
+  torrent: { manifest: ContentManifest; magnetURI: string };
+  accepts: Array<{ estimatedCost: number }>;
+}
+
+interface ManifestResponse200 {
+  manifest: ContentManifest;
+  magnetURI: string;
+}
+
 export interface PlayerState {
   status: 'idle' | 'loading' | 'buffering' | 'playing' | 'paused' | 'error';
   infohash: string;
@@ -42,7 +52,7 @@ export async function fetchManifest(
   const res = await fetch(`${apiUrl}/api/stream/${infohash}`);
 
   if (res.status === 402) {
-    const data = await res.json();
+    const data = (await res.json()) as ManifestResponse402;
     return {
       manifest: data.torrent.manifest,
       magnetURI: data.torrent.magnetURI,
@@ -51,7 +61,7 @@ export async function fetchManifest(
   }
 
   if (res.status === 200) {
-    const data = await res.json();
+    const data = (await res.json()) as ManifestResponse200;
     return {
       manifest: data.manifest,
       magnetURI: data.magnetURI,

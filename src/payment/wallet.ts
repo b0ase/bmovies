@@ -84,8 +84,11 @@ export class Wallet {
       throw new Error(`UTXO fetch failed: ${res.status}`);
     }
 
-    const raw: Array<{ tx_hash: string; tx_pos: number; value: number }> =
-      await res.json();
+    const raw = (await res.json()) as Array<{
+      tx_hash: string;
+      tx_pos: number;
+      value: number;
+    }>;
 
     const lockingScript = new P2PKH().lock(this.address);
     const scriptHex = Buffer.from(lockingScript.toBinary()).toString('hex');

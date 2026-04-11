@@ -56,13 +56,21 @@ export async function settleChannel(
   channel: PaymentChannel,
   network: Network = 'mainnet',
 ): Promise<SettlementResult> {
+  // Match how PaymentChannel derives creatorAmount / seederAmount:
+  // recipient[0] is the creator, recipients[1..] are seeders. The
+  // SettlementResult shape collapses any seeder set into a single
+  // address slot, so we surface the first seeder; multi-seeder
+  // breakdowns belong on the channel.recipientAmounts getter.
+  const recipients = channel.config.recipients;
+  const creatorAddress = recipients[0]?.address ?? '';
+  const seederAddress = recipients[1]?.address ?? '';
   const base: Omit<SettlementResult, 'txid' | 'success' | 'error'> = {
     channelId: channel.channelId,
     network,
     outputs: {
-      creatorAddress: channel.config.creatorAddress,
+      creatorAddress,
       creatorAmount: channel.creatorAmount,
-      seederAddress: channel.config.seederAddress,
+      seederAddress,
       seederAmount: channel.seederAmount,
       leecherChange: channel.config.fundingAmount - channel.creatorAmount - channel.seederAmount - 200,
     },
