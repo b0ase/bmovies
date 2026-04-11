@@ -66,6 +66,16 @@ export abstract class Agent {
   /** Append an entry to the agent's action log */
   protected record(entry: Omit<AgentLogEntry, 'ts'>): void {
     this.log.push({ ts: Date.now(), ...entry });
+    // Mirror errors and tx events to stdout so the operator can
+    // see hook failures (especially team-dispatch failures) live.
+    // Without this, agent-internal errors silently disappear into
+    // the in-memory ring buffer with no UI surface.
+    if (entry.kind === 'error') {
+      console.error(`[AGENT ✗] ${this.identity.id}: ${entry.message}`);
+    } else if (entry.kind === 'tx') {
+      const txSuffix = entry.txid ? ` tx ${entry.txid.slice(0, 12)}…` : '';
+      console.log(`[AGENT ✓] ${this.identity.id}: ${entry.message}${txSuffix}`);
+    }
   }
 
   /** Return the most recent log entries, newest first */

@@ -414,6 +414,10 @@ export function buildSwarm(
           address: a.address,
           running: a.running,
           logCount: a.logCount,
+          // Surface the most recent agent-internal log so the
+          // dashboard JSON shows hook errors. Without this, errors
+          // captured by agent.record() are invisible to the operator.
+          recentLog: a.getLog(10),
         })),
         openOffers: registry.listOpenOffers(),
         productions,
