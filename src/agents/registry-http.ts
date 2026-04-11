@@ -174,6 +174,25 @@ export class HttpRegistryClient implements AgentRegistry {
     // content too.
     return offer;
   }
+
+  attachSubscriptionTxid(
+    offerId: string,
+    agentId: string,
+    paymentTxid: string,
+  ): ProductionOffer | null {
+    const offer = this.cache.get(offerId);
+    if (!offer) return null;
+    const sub = offer.subscribers.find((s) => s.agentId === agentId);
+    if (!sub) return null;
+    sub.paymentTxid = paymentTxid;
+    // Server-side persistence of the txid is currently local-only.
+    // The HTTP registry's signed-record protocol does not yet have
+    // a per-subscription txid POST; for the hackathon submission
+    // the SupabaseRegistry path is the production target and it
+    // already persists this. A future BRC-77 signed POST can
+    // backfill the HTTP path the same way.
+    return offer;
+  }
 }
 
 /**

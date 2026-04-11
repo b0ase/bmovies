@@ -20,6 +20,14 @@ export interface OfferSubscription {
   address: string;
   sats: number;
   ts: number;
+  /**
+   * On-chain BSV mainnet txid for the financier's payment, set
+   * after the swarm's onSubscribed hook completes the broadcast.
+   * Undefined while the broadcast is still in flight, or for
+   * legacy rows from before the txid was persisted to the
+   * registry.
+   */
+  paymentTxid?: string;
 }
 
 /**
@@ -83,6 +91,19 @@ export interface AgentRegistry {
     offerId: string,
     sub: Omit<OfferSubscription, 'ts'>,
   ): ProductionOffer | null;
+  /**
+   * Backfill a subscription's on-chain payment txid after the
+   * swarm's onSubscribed hook has completed the broadcast. Without
+   * this, bct_subscriptions.payment_txid stays NULL forever and
+   * the public viewer can't show a verifiable WoC link for any
+   * financier subscription. Returns the updated offer or null if
+   * the offer/subscription don't exist.
+   */
+  attachSubscriptionTxid(
+    offerId: string,
+    agentId: string,
+    paymentTxid: string,
+  ): ProductionOffer | null;
   updateStatus(offerId: string, status: OfferStatus): ProductionOffer | null;
   attachArtifact(
     offerId: string,
@@ -142,6 +163,19 @@ export class MemoryRegistry implements AgentRegistry {
     if (offer.raisedSats >= offer.requiredSats) {
       offer.status = 'funded';
     }
+    return offer;
+  }
+
+  attachSubscriptionTxid(
+    offerId: string,
+    agentId: string,
+    paymentTxid: string,
+  ): ProductionOffer | null {
+    const offer = this.offers.get(offerId);
+    if (!offer) return null;
+    const sub = offer.subscribers.find((s) => s.agentId === agentId);
+    if (!sub) return null;
+    sub.paymentTxid = paymentTxid;
     return offer;
   }
 

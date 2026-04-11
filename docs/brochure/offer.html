@@ -170,7 +170,8 @@
     }
     .artifact .shotlist li .n {
       font-family: 'SF Mono', Monaco, monospace; font-size: 0.55rem;
-      color: #999; margin-right: 0.4rem;
+      color: #999; margin-right: 0.5rem;
+      display: inline-block; min-width: 3rem;
     }
     .artifact .media-img {
       margin: 0; border: 1px solid #000;
@@ -423,7 +424,7 @@
           try { shots = JSON.parse(directorText); } catch {}
         }
         const shotListHtml = Array.isArray(shots) && shots.length
-          ? `<ol class="shotlist">${shots.map((s, i) => `<li><span class="n">SHOT ${String(i + 1).padStart(2, '0')}</span>${esc(String(s))}</li>`).join('')}</ol>`
+          ? `<ol class="shotlist">${shots.map((s, i) => `<li><span class="n">SHOT ${String(i + 1).padStart(2, '0')}</span> ${esc(String(s))}</li>`).join('')}</ol>`
           : (directorText
               ? `<div class="treatment">${esc(directorText)}</div>`
               : `<div class="missing">Shot list URL is not decodable.</div>`);
@@ -487,16 +488,18 @@
            </table>`
         : `<p class="missing" style="margin-top:1.5rem;color:#aaa;font-size:0.85rem;">No financier subscriptions yet.</p>`;
 
-      // Proof panel — every on-chain action we know about on this offer
+      // Proof panel — every on-chain action we know about on this offer.
+      // Subscriptions inserted before the attachSubscriptionTxid backfill
+      // landed have a NULL payment_txid; we still surface them so the
+      // count matches the financier table, but with a "txid not yet
+      // persisted" placeholder instead of a WoC link.
       const proofItems = [];
       for (const s of subs) {
-        if (s.payment_txid) {
-          proofItems.push({
-            label: 'Subscribe',
-            detail: `${esc(s.agent_id)} paid ${fmt(s.sats)} sats`,
-            txid: s.payment_txid,
-          });
-        }
+        proofItems.push({
+          label: 'Subscribe',
+          detail: `${esc(s.agent_id)} paid ${fmt(s.sats)} sats`,
+          txid: s.payment_txid || null,
+        });
       }
       for (const a of arts) {
         if (a.payment_txid) {
@@ -507,8 +510,9 @@
           });
         }
       }
+      const verifiableCount = proofItems.filter((p) => p.txid).length;
       const proofHtml = `<details class="proof">
-          <summary>On-chain proof (${proofItems.length} tx${proofItems.length === 1 ? '' : 's'})</summary>
+          <summary>On-chain proof (${verifiableCount} verifiable / ${proofItems.length} total)</summary>
           <div class="proof-body">
             <p>Every row below is a real BSV mainnet transaction. Click any txid to verify on WhatsOnChain.</p>
             <ul>
@@ -516,7 +520,9 @@
                 <li>
                   <span class="label">${p.label}</span>
                   <span class="detail">${p.detail}</span>
-                  <a href="${wocTx(p.txid)}" target="_blank" rel="noopener">${esc(shortTx(p.txid))}</a>
+                  ${p.txid
+                    ? `<a href="${wocTx(p.txid)}" target="_blank" rel="noopener">${esc(shortTx(p.txid))}</a>`
+                    : `<span style="font-family:'SF Mono',Monaco,monospace;font-size:0.65rem;color:#aaa;">txid not persisted</span>`}
                 </li>
               `).join('')}
             </ul>

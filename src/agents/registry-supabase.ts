@@ -96,6 +96,7 @@ function rowToOffer(
       address: s.address,
       sats: Number(s.sats),
       ts: new Date(s.created_at).getTime(),
+      paymentTxid: s.payment_txid ?? undefined,
     })),
     artifact: artifact
       ? {
@@ -290,6 +291,36 @@ export class SupabaseRegistry implements AgentRegistry {
           console.error('[SupabaseRegistry] increment raised_sats failed:', error);
       });
 
+    return offer;
+  }
+
+  attachSubscriptionTxid(
+    offerId: string,
+    agentId: string,
+    paymentTxid: string,
+  ): ProductionOffer | null {
+    const offer = this.cache.get(offerId);
+    if (!offer) return null;
+    const sub = offer.subscribers.find((s) => s.agentId === agentId);
+    if (!sub) return null;
+    sub.paymentTxid = paymentTxid;
+
+    // Persist the txid back to the bct_subscriptions row so the
+    // public viewer can render a WoC link. The (offer_id, agent_id)
+    // pair is unique by table constraint, so this update touches
+    // exactly one row.
+    void this.client
+      .from('bct_subscriptions')
+      .update({ payment_txid: paymentTxid })
+      .eq('offer_id', offerId)
+      .eq('agent_id', agentId)
+      .then(({ error }) => {
+        if (error)
+          console.error(
+            '[SupabaseRegistry] attachSubscriptionTxid failed:',
+            error,
+          );
+      });
     return offer;
   }
 

@@ -355,6 +355,12 @@ export function buildSwarm(
               try {
                 const receipt = await subscribeOnChain(wallet, offer, sats);
                 subscriptions.push(receipt);
+                // Persist the on-chain txid back to the registry's
+                // subscription row so the public viewer can render
+                // a verifiable WoC link. Without this the
+                // bct_subscriptions.payment_txid column stays NULL
+                // forever and the proof panel undercounts.
+                registry.attachSubscriptionTxid(offer.id, rec.id, receipt.txid);
                 swarmLog({
                   kind: 'tx',
                   agentId: rec.id,
