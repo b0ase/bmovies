@@ -31,6 +31,13 @@
  *                        in parallel for every funded offer instead of a single image call
  */
 
+// Load .env.local before any module that might read process.env.
+// tsx does not auto-load dotenv files, so SUPABASE_*, PITCH_*, and
+// TAAL_ARC_API_KEY would otherwise be undefined here.
+import { config as loadEnv } from 'dotenv';
+loadEnv({ path: '.env.local' });
+loadEnv({ path: '.env' });
+
 import Fastify from 'fastify';
 import { Wallet } from '../src/payment/wallet.js';
 import { loadAgentConfig } from '../src/agents/config.js';
