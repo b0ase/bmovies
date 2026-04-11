@@ -274,13 +274,20 @@ export class SupabaseRegistry implements AgentRegistry {
         if (error)
           console.error('[SupabaseRegistry] insert subscription failed:', error);
       });
+
+    // Atomic raised_sats += sats via the bct_increment_raised_sats
+    // RPC. Replaces a racy `update({raised_sats: <local total>})`
+    // call that lost updates when two financiers ticked concurrently
+    // — both reading the same starting value and writing a stale
+    // total. Migration 0005 defines the function.
     void this.client
-      .from('bct_offers')
-      .update({ raised_sats: offer.raisedSats, status: offer.status })
-      .eq('id', offerId)
-      .then(({ error }) => {
+      .rpc('bct_increment_raised_sats', {
+        p_offer_id: offerId,
+        p_delta_sats: sats,
+      })
+      .then(({ error }: { error: { message: string } | null }) => {
         if (error)
-          console.error('[SupabaseRegistry] update offer raised failed:', error);
+          console.error('[SupabaseRegistry] increment raised_sats failed:', error);
       });
 
     return offer;
