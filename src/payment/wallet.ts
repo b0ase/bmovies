@@ -179,7 +179,7 @@ export class Wallet {
     // Change output
     tx.addP2PKHOutput(this.address); // change flag handled by fee()
 
-    await tx.fee(new SatoshisPerKilobyte(1));
+    await tx.fee(NETWORK_FEE_MODEL);
     await tx.sign();
 
     return tx;

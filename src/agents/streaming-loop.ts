@@ -129,6 +129,30 @@ export class StreamingLoop {
     this.startedAt = Date.now();
     this.handle = setInterval(() => {
       if (this.inflight >= this.maxInflight) return;
+
+      // Pool-aware short-circuit: if a pool is wired in and every
+      // slot is exhausted, stop the loop instead of grinding out
+      // guaranteed-to-fail broadcasts. Without this the loop prints
+      // thousands of [465] errors per minute after the slots bleed
+      // below ARC's fee floor, which drowns out every other log line.
+      const pool = this.opts.pool;
+      if (pool && pool.size > 0 && pool.availableCount === 0) {
+        const retired = pool.retiredCount;
+        if (retired === pool.size) {
+          const e = new Error(
+            `UtxoPool exhausted: all ${pool.size} slots retired (balance below minimum). ` +
+              `Re-prime the pool with a higher --sats-per-slot to keep streaming.`,
+          );
+          this.errors++;
+          this.opts.onError?.(e, this.errors);
+          this.stop();
+          return;
+        }
+        // Otherwise the slots are frozen on chain-depth cooldown —
+        // skip this tick and wait. Don't count as an error.
+        return;
+      }
+
       this.inflight++;
       this.fireOnce()
         .catch((err: unknown) => {

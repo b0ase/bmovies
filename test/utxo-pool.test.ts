@@ -19,7 +19,16 @@ describe('UtxoPool (pure logic, no prime)', () => {
   let wallet: Wallet;
 
   beforeEach(() => {
-    pool = new UtxoPool({ maxChainDepth: 5, cooldownMs: 10_000 });
+    // Construct with minSatoshisPerSlot=0 so the tests below that use
+    // 100-sat placeholder slots can exercise the chain-depth / freeze
+    // logic in isolation without tripping the retire-on-low-balance
+    // path. A dedicated test at the bottom of the file covers that
+    // path explicitly.
+    pool = new UtxoPool({
+      maxChainDepth: 5,
+      cooldownMs: 10_000,
+      minSatoshisPerSlot: 0,
+    });
     wallet = Wallet.random();
   });
 
@@ -154,5 +163,39 @@ describe('UtxoPool (pure logic, no prime)', () => {
     await expect(
       pool.prime({ wallet, slotCount: 10, satsPerSlot: 0 }),
     ).rejects.toThrow(/satsPerSlot/);
+  });
+
+  it('record() retires slots that drop below minSatoshisPerSlot', () => {
+    // Dedicated pool with a 100-sat floor so we can exercise
+    // retirement deterministically.
+    const retirePool = new UtxoPool({
+      maxChainDepth: 5,
+      cooldownMs: 10_000,
+      minSatoshisPerSlot: 100,
+    });
+    const src = makeCachedSourceTx(wallet);
+    // @ts-expect-error private
+    retirePool['slots'] = [
+      { sourceTx: src, vout: 0, satoshis: 500, chainDepth: 1, reserved: false },
+    ];
+
+    // First allocate+record keeps the slot above the floor — still alive.
+    const s1 = retirePool.allocate()!;
+    expect(s1).not.toBeNull();
+    retirePool.record(s1, src, 0, 150);
+    expect(s1.retired).toBeFalsy();
+    expect(retirePool.availableCount).toBe(1);
+
+    // Second record pushes below the floor — slot is retired forever.
+    const s2 = retirePool.allocate()!;
+    expect(s2).not.toBeNull();
+    retirePool.record(s2, src, 0, 50);
+    expect(s2.retired).toBe(true);
+    expect(retirePool.availableCount).toBe(0);
+    expect(retirePool.retiredCount).toBe(1);
+    expect(retirePool.allocate()).toBeNull();
+
+    const stats = retirePool.getStats();
+    expect(stats.retired).toBe(1);
   });
 });

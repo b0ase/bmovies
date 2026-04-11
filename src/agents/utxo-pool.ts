@@ -53,6 +53,12 @@ export interface UtxoSlot {
    * that clears the ancestor chain.
    */
   frozenUntil?: number;
+  /**
+   * Permanently retired slots are excluded from allocate() forever.
+   * Set when the slot's balance drops below the minimum viable
+   * amount for another piece broadcast.
+   */
+  retired?: boolean;
 }
 
 export interface UtxoPoolOptions {
@@ -66,6 +72,15 @@ export interface UtxoPoolOptions {
    * One BSV block is ~10 minutes, so 12 minutes is a safe default.
    */
   cooldownMs?: number;
+  /**
+   * Minimum satoshis a slot must hold to be considered viable for
+   * allocation. Slots that drop below this on record() are retired
+   * permanently so the pool stops grinding out transactions that
+   * pay below the ARC fee floor. Default 100 sats covers a typical
+   * per-piece fan-out (10 sats) + a 260-byte tx fee at 100 sat/kB
+   * (26 sats) plus a 64-sat safety margin.
+   */
+  minSatoshisPerSlot?: number;
 }
 
 export class UtxoPool {
@@ -73,6 +88,7 @@ export class UtxoPool {
   private cursor = 0;
   private readonly maxChainDepth: number;
   private readonly cooldownMs: number;
+  private readonly minSatoshisPerSlot: number;
   /** Running counts for dashboard / debugging */
   private stats = {
     allocations: 0,
@@ -80,11 +96,13 @@ export class UtxoPool {
     freezes: 0,
     starves: 0,
     releases: 0,
+    retired: 0,
   };
 
   constructor(opts: UtxoPoolOptions = {}) {
     this.maxChainDepth = opts.maxChainDepth ?? 20;
     this.cooldownMs = opts.cooldownMs ?? 12 * 60 * 1000;
+    this.minSatoshisPerSlot = opts.minSatoshisPerSlot ?? 100;
   }
 
   get size(): number {
@@ -96,9 +114,16 @@ export class UtxoPool {
     return this.slots.filter(
       (s) =>
         !s.reserved &&
+        !s.retired &&
+        s.satoshis >= this.minSatoshisPerSlot &&
         s.chainDepth < this.maxChainDepth &&
         (!s.frozenUntil || s.frozenUntil <= now),
     ).length;
+  }
+
+  /** Count of slots that have been permanently retired due to low balance */
+  get retiredCount(): number {
+    return this.slots.filter((s) => s.retired).length;
   }
 
   getStats(): typeof this.stats & { size: number; available: number } {
@@ -213,6 +238,8 @@ export class UtxoPool {
       const idx = (this.cursor + i) % this.slots.length;
       const s = this.slots[idx];
       if (s.reserved) continue;
+      if (s.retired) continue;
+      if (s.satoshis < this.minSatoshisPerSlot) continue;
       if (s.chainDepth >= this.maxChainDepth) continue;
       if (s.frozenUntil && s.frozenUntil > now) continue;
       s.reserved = true;
@@ -252,6 +279,15 @@ export class UtxoPool {
     slot.chainDepth += 1;
     slot.reserved = false;
     this.stats.recordings++;
+    // Retire slots whose change output dropped below the minimum
+    // viable balance. These can't fund another broadcast without
+    // paying a fee below ARC's floor, so the pool must stop using
+    // them instead of grinding out rejected txs forever.
+    if (newSatoshis < this.minSatoshisPerSlot) {
+      slot.retired = true;
+      this.stats.retired++;
+      return;
+    }
     if (slot.chainDepth >= this.maxChainDepth) {
       slot.frozenUntil = Date.now() + this.cooldownMs;
       slot.chainDepth = 0; // optimistic reset for post-cooldown reuse

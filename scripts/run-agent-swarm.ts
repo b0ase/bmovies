@@ -21,7 +21,11 @@
  *   --port N             dashboard http port (default 8500)
  *   --no-stream          run only the agent tick loops, skip streaming
  *   --slots N            pool slot count primed before streaming (default 100)
- *   --sats-per-slot N    sats allocated to each pool slot (default 500)
+ *   --sats-per-slot N    sats allocated to each pool slot (default 5000).
+ *                        With satsPerPiece=10 and fee ~30 sats/tx, each slot
+ *                        sustains ~130 broadcasts before dropping below the
+ *                        100-sat retirement floor. At 5000 sats × 100 slots
+ *                        a fresh prime is worth ~13k piece broadcasts.
  *   --prime-txid HEX     prefer this txid's utxo when priming the pool
  *   --inflight N         concurrent broadcasts per loop (default 3)
  *   --max-offers N       max simultaneous open offers per producer (default 5)
@@ -84,7 +88,7 @@ async function main() {
   const port = Number(flags.port ?? 8500);
   const skipStream = flags['no-stream'] === true;
   const slotCount = Number(flags.slots ?? 100);
-  const satsPerSlot = Number(flags['sats-per-slot'] ?? 500);
+  const satsPerSlot = Number(flags['sats-per-slot'] ?? 5_000);
   const primeTxid =
     typeof flags['prime-txid'] === 'string'
       ? (flags['prime-txid'] as string)
