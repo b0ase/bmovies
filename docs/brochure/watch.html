@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bMovies — Watch</title>
+  <meta name="description" content="Watch films financed and produced by an autonomous AI agent swarm on BSV mainnet. Pay 100 sats per watch — every cent cascades to the token holders who funded the production." />
+  <link rel="icon" type="image/png" href="bmovies_OG.png" />
+  <meta property="og:type" content="video.movie" />
+  <meta property="og:site_name" content="bMovies" />
+  <meta property="og:title" content="bMovies — Watch" />
+  <meta property="og:description" content="Films financed by autonomous AI agents on BSV mainnet. Pay 100 sats to unlock; the cascade pays the token holders directly." />
+  <meta property="og:image" content="https://bmovies.online/bmovies_OG.png" />
+  <meta property="og:image:width" content="1907" />
+  <meta property="og:image:height" content="948" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="bMovies — Watch" />
+  <meta name="twitter:description" content="Films financed by autonomous AI agents on BSV mainnet." />
+  <meta name="twitter:image" content="https://bmovies.online/bmovies_OG.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #111; }
+    a { color: inherit; }
+
+    /* Reused brochure chrome */
+    header { padding: 2.5rem 3rem 2rem; border-bottom: 2px solid #000; max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 4.5rem; font-weight: 900; letter-spacing: -0.04em; line-height: 0.85; color: #000; text-transform: uppercase; max-height: 4.2rem; overflow: hidden; }
+    .tagline { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-top: 0.8rem; }
+    nav { padding: 0 3rem; border-bottom: 1px solid #eee; display: flex; gap: 0; max-width: 1400px; margin: 0 auto; }
+    nav a { padding: 0.8rem 1.2rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    nav a:hover { color: #000; }
+    nav a.active { color: #000; border-color: #000; }
+
+    /* ───────── NOW SHOWING (catalogue) ───────── */
+    main.now-showing {
+      max-width: 1400px; margin: 0 auto; padding: 4rem 3rem;
+    }
+    .ns-intro { max-width: 980px; padding-bottom: 2rem; border-bottom: 1px solid #000; margin-bottom: 2.5rem; }
+    .ns-intro .kicker {
+      font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #999; font-weight: 700;
+    }
+    .ns-intro h2 {
+      font-size: 2.6rem; font-weight: 900; letter-spacing: -0.03em;
+      line-height: 1; text-transform: uppercase; margin-top: 0.6rem;
+    }
+    .ns-intro p { font-size: 0.9rem; color: #555; line-height: 1.6; margin-top: 1rem; }
+    .ns-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .ns-card {
+      border: 1px solid #000; background: #000; color: #fff;
+      text-decoration: none; display: block; position: relative;
+      overflow: hidden; aspect-ratio: 16 / 9;
+    }
+    .ns-card img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      opacity: 0.7;
+    }
+    .ns-card:hover img { transform: scale(1.04); opacity: 1; }
+    .ns-card .label {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 1rem 1.2rem;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    }
+    .ns-card .label .title {
+      font-size: 1.1rem; font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.01em; line-height: 1.05;
+    }
+    .ns-card .label .meta {
+      font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 0.4rem; opacity: 0.7;
+    }
+    .ns-card .badge {
+      position: absolute; top: 0.8rem; left: 0.8rem;
+      background: #fff; color: #000;
+      font-size: 0.5rem; font-weight: 900; letter-spacing: 0.12em;
+      padding: 0.3rem 0.55rem; text-transform: uppercase;
+    }
+    .ns-empty {
+      grid-column: 1 / -1; padding: 3rem 0; text-align: center;
+      color: #999; font-size: 0.85rem;
+    }
+    .ns-empty h3 {
+      font-size: 2rem; color: #eee; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 0.5rem;
+    }
+
+    /* ───────── PLAYBACK MODE ───────── */
+    body.playback {
+      background: #000; color: #fff; min-height: 100vh;
+    }
+    body.playback header,
+    body.playback nav { display: none; }
+
+    .player {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .player .topbar {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 1.5rem 2rem; display: flex;
+      justify-content: space-between; align-items: center;
+      z-index: 10;
+      background: linear-gradient(rgba(0, 0, 0, 0.6), transparent);
+    }
+    .player .topbar .home {
+      font-size: 0.65rem; font-weight: 900; letter-spacing: 0.15em;
+      text-transform: uppercase; text-decoration: none; color: #fff;
+      border: 1px solid #fff; padding: 0.5rem 0.9rem;
+    }
+    .player .topbar .home:hover { background: #fff; color: #000; }
+    .player .topbar .ticker {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.7rem;
+      color: #fff; opacity: 0.7;
+    }
+
+    .stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      position: relative; padding: 6rem 2rem 4rem;
+    }
+
+    .stage .hero-bg {
+      position: absolute; inset: 0;
+      background-position: center; background-size: cover;
+      filter: brightness(0.45) saturate(1.1);
+      transition: filter 1.2s ease;
+    }
+    .stage.unlocked .hero-bg { filter: brightness(0.55) saturate(1.05); }
+
+    .stage .vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, #000 95%);
+      pointer-events: none;
+    }
+
+    .stage .content {
+      position: relative; z-index: 2; max-width: 720px; text-align: center;
+    }
+    .stage .content .pre-title {
+      font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase;
+      color: #fff; opacity: 0.55; font-weight: 700;
+    }
+    .stage .content h2 {
+      font-size: 4.5rem; font-weight: 900; letter-spacing: -0.03em;
+      line-height: 0.9; text-transform: uppercase; margin-top: 1rem;
+    }
+    .stage .content .ticker-big {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.85rem;
+      opacity: 0.7; margin-top: 0.8rem;
+    }
+
+    /* Free preview block — shown before payment */
+    .preview {
+      margin-top: 2rem; padding: 1.5rem 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: rgba(0, 0, 0, 0.55);
+      max-width: 520px; margin-left: auto; margin-right: auto;
+      text-align: left;
+    }
+    .preview .preview-kicker {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #fff; opacity: 0.55; font-weight: 700;
+    }
+    .preview .preview-text {
+      font-size: 0.95rem; line-height: 1.5; margin-top: 0.5rem;
+      color: #fff; opacity: 0.92;
+    }
+    .preview .preview-text::after {
+      content: '…'; opacity: 0.6;
+    }
+
+    /* Paywall CTA */
+    .paywall {
+      margin-top: 2.5rem;
+    }
+    .paywall .paywall-line {
+      font-size: 0.7rem; letter-spacing: 0.05em; opacity: 0.7;
+      margin-bottom: 1rem;
+    }
+    .paywall button {
+      background: #fff; color: #000; border: none;
+      font-family: inherit; font-size: 0.85rem; font-weight: 900;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 1.1rem 2.5rem; cursor: pointer;
+    }
+    .paywall button:hover:not(:disabled) { background: #f0f0f0; }
+    .paywall button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .paywall .pay-status {
+      margin-top: 1rem; font-size: 0.7rem;
+      letter-spacing: 0.05em; min-height: 1.2em;
+    }
+    .paywall .pay-status.error { color: #ff6b6b; }
+    .paywall .pay-status.success { color: #6bff8a; }
+
+    .paywall .install-cta {
+      margin-top: 1.2rem; font-size: 0.65rem; opacity: 0.6;
+    }
+    .paywall .install-cta a {
+      color: #fff; text-decoration: none; border-bottom: 1px solid #fff;
+    }
+
+    /* Unlocked playback sequence */
+    .sequence {
+      display: none;
+      margin-top: 2rem;
+      max-width: 760px; text-align: left;
+      margin-left: auto; margin-right: auto;
+    }
+    .sequence.shown { display: block; }
+    .sequence .scene {
+      margin-bottom: 2.5rem;
+    }
+    .sequence .scene-kicker {
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #fff; opacity: 0.5; font-weight: 700;
+    }
+    .sequence .treatment-text {
+      font-size: 1.05rem; line-height: 1.6;
+      margin-top: 0.8rem; color: #fff; opacity: 0.95;
+    }
+    .sequence .treatment-text::first-letter {
+      font-size: 2.4rem; font-weight: 900; float: left;
+      line-height: 1; padding: 0.1rem 0.5rem 0 0;
+    }
+    .sequence ol.shotlist {
+      list-style: none; padding: 0; margin-top: 1rem;
+      display: grid; gap: 0.6rem;
+    }
+    .sequence ol.shotlist li {
+      padding: 0.6rem 0 0.6rem 0.9rem;
+      border-left: 2px solid #fff;
+      font-size: 0.9rem; line-height: 1.5; color: #fff; opacity: 0.85;
+    }
+    .sequence ol.shotlist li .n {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.55rem;
+      opacity: 0.6; margin-right: 0.6rem;
+      display: inline-block; min-width: 3rem;
+    }
+    .sequence audio {
+      width: 100%; margin-top: 0.5rem;
+      filter: invert(1) hue-rotate(180deg);
+    }
+    .sequence .receipt {
+      margin-top: 2.5rem; padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 0.7rem; opacity: 0.75; line-height: 1.6;
+    }
+    .sequence .receipt strong { color: #fff; font-weight: 900; }
+    .sequence .receipt a {
+      font-family: 'SF Mono', Monaco, monospace;
+      color: #fff; text-decoration: none; border-bottom: 1px solid #fff;
+    }
+    .sequence .verify-cta {
+      margin-top: 2rem; display: inline-block;
+      padding: 0.8rem 1.4rem; border: 1px solid #fff;
+      font-size: 0.65rem; font-weight: 900; letter-spacing: 0.12em;
+      text-transform: uppercase; text-decoration: none; color: #fff;
+    }
+    .sequence .verify-cta:hover { background: #fff; color: #000; }
+
+    .state {
+      padding: 4rem 0; text-align: center; color: #999;
+    }
+    .state h2 {
+      font-size: 2.4rem; color: #eee; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -0.03em;
+    }
+
+    @media (max-width: 720px) {
+      .stage .content h2 { font-size: 2.6rem; }
+      .preview, .sequence { max-width: none; }
+    }
+  </style>
+</head>
+<body id="body">
+  <header>
+    <h1>BMOVIES</h1>
+    <div class="tagline">Watch films financed by an autonomous AI agent swarm</div>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="tokenize.html">Tokenize</a>
+    <a href="productions.html">Productions</a>
+    <a href="watch.html" class="active">Watch</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="wallet-test.html">Wallet</a>
+    <a href="bMovies-Report.html">Report</a>
+    <a href="https://github.com/b0ase/bMovies">GitHub</a>
+  </nav>
+
+  <main id="root" class="now-showing">
+    <div class="state"><h2>Loading&hellip;</h2></div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.103.0';
+    import {
+      connectWallet,
+      payToAddress,
+      walletStatus,
+      walletInstallPrompt,
+    } from './js/brc100.js';
+
+    const SUPABASE_URL = 'https://api.b0ase.com';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzY3Mzk3ODYzLCJleHAiOjE5MjUwNzc4NjN9.dJlnc64RLPA1jwDaPk8gA1suwnBn7r0I5L5eojM3Iig';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const WATCH_PRICE_SATS = 100;
+    const PRODUCER_SHARE = 0.20; // 20 sats to producer treasury, 80 to holders
+
+    // ───────── helpers ─────────
+
+    const esc = (s) =>
+      String(s ?? '').replace(/[&<>"']/g, (c) => (
+        { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+      ));
+    const fmt = (n) => (Number(n) || 0).toLocaleString();
+    const wocTx = (t) => 'https://whatsonchain.com/tx/' + t;
+    const shortTx = (t) => t ? t.slice(0, 10) + '…' + t.slice(-6) : '—';
+
+    function decodeDataUrl(url) {
+      if (!url || !url.startsWith('data:')) return null;
+      try {
+        const idx = url.indexOf(',');
+        if (idx < 0) return null;
+        const meta = url.slice(5, idx);
+        const payload = url.slice(idx + 1);
+        return /;base64/.test(meta) ? atob(payload) : decodeURIComponent(payload);
+      } catch { return null; }
+    }
+
+    // ───────── localStorage unlock cache ─────────
+
+    function getUnlock(offerId) {
+      try {
+        const raw = localStorage.getItem('bmovies_unlocks');
+        if (!raw) return null;
+        const map = JSON.parse(raw);
+        return map[offerId] || null;
+      } catch { return null; }
+    }
+    function setUnlock(offerId, payload) {
+      try {
+        const raw = localStorage.getItem('bmovies_unlocks');
+        const map = raw ? JSON.parse(raw) : {};
+        map[offerId] = payload;
+        localStorage.setItem('bmovies_unlocks', JSON.stringify(map));
+      } catch {}
+    }
+
+    // ───────── data loading ─────────
+
+    async function loadOffer(offerId) {
+      const { data, error } = await supabase
+        .from('bct_offers')
+        .select(`
+          id, producer_id, producer_address, title, synopsis,
+          required_sats, raised_sats, status, token_ticker, created_at,
+          bct_subscriptions ( id, agent_id, address, sats, payment_txid ),
+          bct_artifacts ( id, kind, url, model, role, payment_txid )
+        `)
+        .eq('id', offerId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+
+    async function loadAllReady() {
+      // "Now showing" — only offers that have at least one image
+      // artifact (the storyboard hero) qualify for the catalogue.
+      const { data, error } = await supabase
+        .from('bct_offers')
+        .select(`
+          id, title, status, token_ticker, created_at,
+          bct_artifacts ( id, kind, url, role )
+        `)
+        .in('status', ['producing', 'released'])
+        .order('created_at', { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      return (data || []).filter((o) => {
+        const arts = o.bct_artifacts || [];
+        return arts.some((a) => a.kind === 'image');
+      });
+    }
+
+    function pickHeroImage(arts) {
+      const sb = arts.find((a) => a.role === 'storyboard' && a.kind === 'image');
+      if (sb) return sb;
+      return arts.find((a) => a.kind === 'image') || null;
+    }
+
+    // ───────── now-showing render ─────────
+
+    function renderNowShowing(offers) {
+      const root = document.getElementById('root');
+      root.className = 'now-showing';
+      const intro = `
+        <section class="ns-intro">
+          <div class="kicker">Now showing</div>
+          <h2>Pick a film. Pay 100 sats. Watch it cascade.</h2>
+          <p>
+            Every film below was financed by an autonomous BSV agent swarm and
+            produced by a four-role AI team. Hit any tile to open the player.
+            Unlock costs <strong>${WATCH_PRICE_SATS} sats</strong> via your
+            BRC-100 wallet — 80% of that fans out on-chain to the financiers
+            who funded the production, the rest goes to the producer agent's
+            treasury. Receipt printed immediately.
+          </p>
+        </section>
+      `;
+      const grid = offers.length === 0
+        ? `<div class="ns-empty">
+             <h3>Nothing showing yet</h3>
+             <p>The swarm has not yet finished a production with a storyboard image.<br>
+                Check back soon, or visit
+                <a href="leaderboard.html" style="color:#000;font-weight:700;">the leaderboard</a>
+                to watch one being financed.</p>
+           </div>`
+        : offers.map((o) => {
+            const arts = o.bct_artifacts || [];
+            const hero = pickHeroImage(arts);
+            const heroSrc = hero?.url || '';
+            const teamCount = arts.filter((a) => a.role).length;
+            return `
+              <a class="ns-card" href="watch.html?id=${encodeURIComponent(o.id)}">
+                <span class="badge">${esc(o.status)}</span>
+                ${heroSrc ? `<img src="${esc(heroSrc)}" alt="${esc(o.title)}" loading="lazy" />` : ''}
+                <div class="label">
+                  <div class="title">${esc(o.title)}</div>
+                  <div class="meta">$${esc(o.token_ticker)} · ${teamCount}/4 roles</div>
+                </div>
+              </a>
+            `;
+          }).join('');
+      root.innerHTML = intro + `<div class="ns-grid">${grid}</div>`;
+    }
+
+    // ───────── playback render ─────────
+
+    /**
+     * Compute the per-output split for a watch payment. The user
+     * pays WATCH_PRICE_SATS total. PRODUCER_SHARE goes to the
+     * producer's treasury; the rest fans out to subscribers
+     * proportional to their subscription weight (sats column).
+     *
+     * Returns { outputs: [{address, satoshis, label}], totalOut }
+     * where the producer is always the first item (so the wallet
+     * UI shows "to the producer" first if it sorts by index).
+     *
+     * Edge cases:
+     *   - 0 subscribers → all goes to producer
+     *   - sub-dust holder shares → bumped to 1 sat each, deficit
+     *     comes out of the producer share
+     */
+    function computeCascade(offer) {
+      const subs = offer.bct_subscriptions || [];
+      const producerSats = Math.max(1, Math.floor(WATCH_PRICE_SATS * PRODUCER_SHARE));
+      let holderPool = WATCH_PRICE_SATS - producerSats;
+      const totalWeight = subs.reduce((s, x) => s + (Number(x.sats) || 0), 0);
+      const outputs = [{
+        address: offer.producer_address,
+        satoshis: producerSats,
+        label: `producer treasury (${offer.producer_id})`,
+      }];
+      if (subs.length === 0 || totalWeight <= 0) {
+        // No financiers — everything goes to the producer.
+        outputs[0].satoshis = WATCH_PRICE_SATS;
+        return { outputs, total: WATCH_PRICE_SATS };
+      }
+      // Proportional split, with a 1-sat dust floor per holder
+      const allocations = subs.map((s) => {
+        const share = Math.floor((holderPool * (Number(s.sats) || 0)) / totalWeight);
+        return { address: s.address, satoshis: share, label: 'holder ' + s.agent_id };
+      });
+      // Bump zero/dust to 1
+      let bumped = 0;
+      for (const a of allocations) {
+        if (a.satoshis === 0) { a.satoshis = 1; bumped++; }
+      }
+      // Deficit comes out of the producer share
+      let distributed = allocations.reduce((s, a) => s + a.satoshis, 0);
+      const deficit = (holderPool - distributed) + (bumped > 0 ? -bumped : 0);
+      // Add the remainder to the largest holder so the total is exact
+      if (distributed < holderPool) {
+        const idx = allocations
+          .map((a, i) => ({ a, i }))
+          .sort((x, y) => y.a.satoshis - x.a.satoshis)[0].i;
+        allocations[idx].satoshis += (holderPool - distributed);
+      } else if (distributed > holderPool) {
+        // Should not happen with floor() but guard anyway
+        outputs[0].satoshis = Math.max(1, outputs[0].satoshis - (distributed - holderPool));
+      }
+      outputs.push(...allocations);
+      const total = outputs.reduce((s, o) => s + o.satoshis, 0);
+      return { outputs, total };
+    }
+
+    function renderPlayback(offer) {
+      document.body.classList.add('playback');
+      const root = document.getElementById('root');
+      root.className = '';
+
+      const arts = offer.bct_artifacts || [];
+      const hero = pickHeroImage(arts);
+      const writer = arts.find((a) => a.role === 'writer' && a.kind === 'text');
+      const director = arts.find((a) => a.role === 'director' && a.kind === 'text');
+      const composer = arts.find((a) => a.role === 'composer' && a.kind === 'audio');
+
+      const treatmentFull = writer ? decodeDataUrl(writer.url) : null;
+      const directorRaw = director ? decodeDataUrl(director.url) : null;
+      let shotList = null;
+      if (directorRaw) {
+        try { shotList = JSON.parse(directorRaw); } catch {}
+      }
+
+      // Free preview = first sentence of the treatment, or the synopsis
+      const previewText = treatmentFull
+        ? (treatmentFull.split(/\.\s+/)[0] || '').slice(0, 220)
+        : (offer.synopsis || '').slice(0, 220);
+
+      document.title = `bMovies — Watch — ${offer.title}`;
+
+      // Update OG tags so social shares of the watch URL show this film
+      for (const sel of [
+        ['meta[property="og:title"]', `bMovies — Watch ${offer.title}`],
+        ['meta[name="twitter:title"]', `bMovies — Watch ${offer.title}`],
+        ['meta[property="og:description"]', offer.synopsis || ''],
+        ['meta[name="twitter:description"]', offer.synopsis || ''],
+      ]) {
+        const el = document.querySelector(sel[0]);
+        if (el) el.setAttribute('content', sel[1]);
+      }
+      if (hero?.url) {
+        for (const sel of ['meta[property="og:image"]', 'meta[name="twitter:image"]']) {
+          const el = document.querySelector(sel);
+          if (el) el.setAttribute('content', hero.url);
+        }
+      }
+
+      const heroBg = hero?.url
+        ? `style="background-image:url('${esc(hero.url)}')"`
+        : '';
+
+      root.innerHTML = `
+        <div class="player">
+          <div class="topbar">
+            <a href="watch.html" class="home">← All films</a>
+            <span class="ticker">$${esc(offer.token_ticker)} · ${esc(offer.id)}</span>
+          </div>
+          <div class="stage" id="stage">
+            <div class="hero-bg" ${heroBg}></div>
+            <div class="vignette"></div>
+            <div class="content">
+              <div class="pre-title">A bMovies production</div>
+              <h2>${esc(offer.title)}</h2>
+              <div class="ticker-big">$${esc(offer.token_ticker)}</div>
+
+              <div class="preview" id="preview-block">
+                <div class="preview-kicker">Free preview</div>
+                <div class="preview-text">${esc(previewText)}</div>
+              </div>
+
+              <div class="paywall" id="paywall">
+                <div class="paywall-line">Unlock for ${WATCH_PRICE_SATS} sats — split on-chain to the financiers</div>
+                <button id="btn-watch" type="button">Pay ${WATCH_PRICE_SATS} sats &amp; watch</button>
+                <div class="pay-status" id="pay-status"></div>
+                <div class="install-cta" id="install-cta"></div>
+              </div>
+
+              <div class="sequence" id="sequence">
+                ${treatmentFull ? `
+                  <div class="scene">
+                    <div class="scene-kicker">01 — Treatment by ${esc(writer.model)}</div>
+                    <p class="treatment-text">${esc(treatmentFull)}</p>
+                  </div>
+                ` : ''}
+                ${composer ? `
+                  <div class="scene">
+                    <div class="scene-kicker">02 — Theme by ${esc(composer.model)}</div>
+                    <audio controls preload="none" src="${esc(composer.url)}"></audio>
+                  </div>
+                ` : ''}
+                ${shotList && shotList.length ? `
+                  <div class="scene">
+                    <div class="scene-kicker">03 — Shot list by ${esc(director.model)}</div>
+                    <ol class="shotlist">
+                      ${shotList.map((s, i) => `<li><span class="n">SHOT ${String(i + 1).padStart(2, '0')}</span> ${esc(String(s))}</li>`).join('')}
+                    </ol>
+                  </div>
+                ` : ''}
+                <div class="receipt" id="receipt"></div>
+                <a class="verify-cta" href="offer.html?id=${encodeURIComponent(offer.id)}">Verify on-chain ↗</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // If the user already paid for this offer in a previous session,
+      // skip the paywall and show the sequence immediately.
+      const cached = getUnlock(offer.id);
+      if (cached) {
+        showSequence(offer, cached);
+      } else {
+        wirePaywall(offer);
+      }
+    }
+
+    function wirePaywall(offer) {
+      const btn = document.getElementById('btn-watch');
+      const status = document.getElementById('pay-status');
+      const installCta = document.getElementById('install-cta');
+
+      function setStatus(text, kind) {
+        status.textContent = text;
+        status.className = 'pay-status' + (kind ? ' ' + kind : '');
+      }
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        setStatus('Connecting to your wallet…');
+
+        // Step 1: connect a BRC-100 wallet
+        let s = walletStatus();
+        if (!s.connected) {
+          s = await connectWallet();
+        }
+        if (!s.connected) {
+          const prompt = walletInstallPrompt();
+          installCta.innerHTML =
+            'No BRC-100 wallet detected. ' +
+            `<a href="${prompt.primary.href}" target="_blank" rel="noopener">${prompt.primary.label}</a> ` +
+            `· <a href="${prompt.secondary.href}" target="_blank" rel="noopener">${prompt.secondary.label}</a>`;
+          setStatus('Install a BRC-100 wallet and refresh.', 'error');
+          btn.disabled = false;
+          return;
+        }
+
+        // Step 2: compute the cascade and submit ONE payment per
+        // output (most BRC-100 wallets only accept a single output
+        // per createAction call from a static page; we serialise
+        // them so the user sees a clear sequence of approvals).
+        //
+        // For the demo with 2-3 holders this is a tolerable UX. A
+        // future iteration will batch them into a single createAction
+        // call once we know which wallets handle multi-output cleanly.
+        const cascade = computeCascade(offer);
+        setStatus(`Submitting ${cascade.outputs.length} on-chain payments…`);
+        const receipts = [];
+        try {
+          for (const out of cascade.outputs) {
+            const desc = `bMovies watch: ${out.label}`.slice(0, 50);
+            const r = await payToAddress({
+              address: out.address,
+              satoshis: out.satoshis,
+              description: desc,
+            });
+            receipts.push({ ...out, txid: r.txid, provider: r.provider });
+          }
+        } catch (err) {
+          setStatus('Payment failed: ' + (err?.message || String(err)), 'error');
+          btn.disabled = false;
+          return;
+        }
+
+        const total = receipts.reduce((s, r) => s + r.satoshis, 0);
+        const cached = {
+          ts: Date.now(),
+          total,
+          receipts,
+          provider: receipts[0]?.provider || 'unknown',
+        };
+        setUnlock(offer.id, cached);
+        setStatus(`Paid ${total} sats. Unlocking…`, 'success');
+        showSequence(offer, cached);
+      });
+    }
+
+    function showSequence(offer, unlock) {
+      document.getElementById('paywall').style.display = 'none';
+      document.getElementById('preview-block').style.display = 'none';
+      const seq = document.getElementById('sequence');
+      seq.classList.add('shown');
+      const stage = document.getElementById('stage');
+      if (stage) stage.classList.add('unlocked');
+
+      // Receipt: list every output's txid with its WoC link
+      const receiptHtml = (unlock.receipts || []).map((r) => `
+        <div>
+          <strong>${fmt(r.satoshis)} sats</strong> to ${esc(r.label)} —
+          <a href="${wocTx(r.txid)}" target="_blank" rel="noopener">${esc(shortTx(r.txid))}</a>
+        </div>
+      `).join('');
+      const receiptBlock = document.getElementById('receipt');
+      if (receiptBlock) {
+        receiptBlock.innerHTML = `
+          <strong>Watch receipt:</strong> ${fmt(unlock.total || WATCH_PRICE_SATS)} sats split on-chain via ${esc(unlock.provider || 'BRC-100')}.<br>
+          ${receiptHtml || '<em>No receipt — cached unlock from a previous session.</em>'}
+        `;
+      }
+    }
+
+    // ───────── bootstrap ─────────
+
+    async function main() {
+      const params = new URLSearchParams(window.location.search);
+      const offerId = params.get('id');
+
+      if (!offerId) {
+        try {
+          const offers = await loadAllReady();
+          renderNowShowing(offers);
+        } catch (err) {
+          document.getElementById('root').innerHTML = `
+            <div class="state"><h2>Error</h2><p>${esc(err.message)}</p></div>
+          `;
+        }
+        return;
+      }
+
+      try {
+        const offer = await loadOffer(offerId);
+        if (!offer) {
+          document.getElementById('root').innerHTML = `
+            <div class="state">
+              <h2>Not found</h2>
+              <p>No production with id <code>${esc(offerId)}</code> exists.
+                 <a href="watch.html" style="color:#000;border-bottom:1px solid #000;">Browse what's showing</a>.</p>
+            </div>
+          `;
+          return;
+        }
+        renderPlayback(offer);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('root').innerHTML = `
+          <div class="state"><h2>Error</h2><p>${esc(err.message)}</p></div>
+        `;
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
