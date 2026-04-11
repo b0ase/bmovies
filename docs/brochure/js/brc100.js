@@ -70,24 +70,41 @@ async function loadSdk() {
 // ───────────── Detection ─────────────
 
 /**
- * Probe localhost for a BSV Desktop / Metanet Client instance.
- * Returns the base URL if one responds, else null. We ping the
- * root with an OPTIONS request; the wallet's CORS preflight
- * answers even when no origin header is present.
+ * Try to connect to a BSV Desktop / Metanet Client on one of the
+ * known ports. Rather than probing with a manual fetch (which hits
+ * mixed-content / PNA / CORS preflight issues before reaching the
+ * wallet), we instantiate an HTTPWalletJSON substrate directly and
+ * attempt a lightweight getPublicKey handshake. If that succeeds,
+ * the wallet is present and we return a fully-wired WalletClient
+ * plus the user's address. If it throws on every port, null.
+ *
+ * Returns: { url, client, address, publicKey } | null
  */
 export async function detectMetanet() {
+  const sdk = await loadSdk();
   for (const port of METANET_PORTS) {
     const url = `http://127.0.0.1:${port}`;
     try {
-      const res = await fetch(url, {
-        method: 'OPTIONS',
-        signal: AbortSignal.timeout(1500),
+      const substrate = new sdk.HTTPWalletJSON(url);
+      const client = new sdk.WalletClient(substrate);
+      // Race against a short timeout so a misbehaving substrate
+      // doesn't hang the detection loop.
+      const handshake = client.getPublicKey({
+        protocolID: PROTOCOL_ID,
+        keyID: '1',
       });
-      if (res.ok || res.status === 405 || res.status === 200) {
-        return url;
-      }
-    } catch {
-      // port not listening — try next
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('handshake timeout')), 4000),
+      );
+      const { publicKey } = await Promise.race([handshake, timeout]);
+      const pk = sdk.PublicKey.fromString(publicKey);
+      const address = pk.toAddress().toString();
+      return { url, client, address, publicKey };
+    } catch (err) {
+      // This port didn't answer — try the next one.
+      // We log at debug level so the operator can see what failed
+      // if they're looking at devtools.
+      console.debug(`[brc100] Metanet handshake on ${url} failed:`, err?.message || err);
     }
   }
   return null;
@@ -112,42 +129,20 @@ export function detectYoursWallet() {
  * check .connected before acting.
  */
 export async function connectWallet() {
-  const metanetUrl = await detectMetanet();
-  if (metanetUrl) {
-    return connectMetanet(metanetUrl);
+  const detected = await detectMetanet();
+  if (detected) {
+    // detectMetanet already performed the getPublicKey handshake
+    // and has a working WalletClient — promote it to module state.
+    _client = detected.client;
+    _address = detected.address;
+    _publicKey = detected.publicKey;
+    _provider = 'metanet';
+    return walletStatus();
   }
   if (detectYoursWallet()) {
     return connectYours();
   }
   return walletStatus();
-}
-
-async function connectMetanet(baseUrl) {
-  try {
-    const sdk = await loadSdk();
-    const substrate = new sdk.HTTPWalletJSON(baseUrl);
-    _client = new sdk.WalletClient(substrate);
-
-    // Lightweight handshake — the wallet will prompt the user to
-    // authorize bMovies on the very first call.
-    const { publicKey } = await _client.getPublicKey({
-      protocolID: PROTOCOL_ID,
-      keyID: '1',
-    });
-
-    const pk = sdk.PublicKey.fromString(publicKey);
-    _publicKey = publicKey;
-    _address = pk.toAddress().toString();
-    _provider = 'metanet';
-    return walletStatus();
-  } catch (err) {
-    _client = null;
-    _provider = null;
-    _address = null;
-    _publicKey = null;
-    console.error('[brc100] Metanet connect failed:', err);
-    return walletStatus(err);
-  }
 }
 
 async function connectYours() {
