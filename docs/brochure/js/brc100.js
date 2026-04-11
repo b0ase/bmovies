@@ -264,18 +264,62 @@ async function payViaYours({ address, satoshis, description }) {
   if (!yours || typeof yours.sendBsv !== 'function') {
     throw new Error('Yours wallet does not expose sendBsv');
   }
-  const result = await yours.sendBsv([
-    {
-      address,
-      satoshis,
-      description: truncateDescription(description),
-    },
-  ]);
-  const txid = typeof result === 'string'
-    ? result
-    : result?.txid || result?.txId;
+
+  // Yours's sendBsv() internally broadcasts via 1sat.app's indexer,
+  // which can go down or flap with 500/504/409/404 responses. When
+  // that happens Yours's promise may never resolve, or may resolve
+  // with a non-standard error. We set a 25-second timeout so the
+  // caller's UI never hangs forever, and return a clear reason when
+  // the backend is unreachable so the operator can see it.
+  const TIMEOUT_MS = 25_000;
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(
+        new Error(
+          'Yours wallet timed out after 25s — Yours may have broadcast ' +
+            'the tx but its 1sat.app backend is unresponsive. Check your ' +
+            'Yours wallet UI for the txid, or query WoC for recent txs ' +
+            'from your address.',
+        ),
+      );
+    }, TIMEOUT_MS);
+  });
+
+  let result;
+  try {
+    result = await Promise.race([
+      yours.sendBsv([
+        {
+          address,
+          satoshis,
+          description: truncateDescription(description),
+        },
+      ]),
+      timeoutPromise,
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+
+  // Yours returns { txid, rawtx } in newer versions, or just a
+  // string txid in older ones. Accept both.
+  const txid =
+    typeof result === 'string'
+      ? result
+      : result?.txid || result?.txId || result?.hash || null;
+
   if (!txid) {
-    throw new Error('Yours wallet returned no txid');
+    // Some Yours versions return an error shape like
+    // { error: "Failed to..." } instead of throwing.
+    const errMsg = result?.error || result?.message;
+    if (errMsg) {
+      throw new Error('Yours wallet: ' + errMsg);
+    }
+    throw new Error(
+      'Yours wallet returned no txid. Response: ' +
+        JSON.stringify(result ?? null).slice(0, 200),
+    );
   }
   return { txid, provider: 'yours' };
 }
