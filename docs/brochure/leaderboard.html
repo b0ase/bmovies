@@ -129,6 +129,17 @@
       display: inline-block; width: 0.6rem; height: 0.6rem; background: #000;
       border-radius: 50%; margin-left: 0.5rem; vertical-align: middle;
     }
+    .role-badges {
+      display: inline-flex; gap: 0.25rem; margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .role-badges .rb {
+      display: inline-block; font-size: 0.45rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.15rem 0.35rem; border: 1px solid #000; color: #000;
+      background: #fff;
+    }
+    .role-badges .rb.muted { color: #ccc; border-color: #eee; }
     .empty {
       padding: 4rem 0; text-align: center; color: #999; font-size: 0.85rem;
     }
@@ -218,7 +229,7 @@
           id, title, synopsis, producer_id, producer_address,
           required_sats, raised_sats, status, token_ticker, created_at,
           bct_subscriptions ( id ),
-          bct_artifacts ( id, url, kind )
+          bct_artifacts ( id, url, kind, role )
         `)
         .order('created_at', { ascending: false })
         .limit(200);
@@ -270,18 +281,29 @@
           '<p>The swarm has not posted any films yet. Check back soon.</p></td></tr>';
         return;
       }
+      const ROLE_ORDER = ['writer', 'director', 'storyboard', 'composer'];
       tbody.innerHTML = offers.map((o, i) => {
         const pct = Math.min(100, Math.round(
           (Number(o.raised_sats) / Math.max(1, Number(o.required_sats))) * 100
         ));
-        const hasArtifact = o.bct_artifacts && o.bct_artifacts.length > 0;
+        const arts = o.bct_artifacts || [];
+        const hasArtifact = arts.length > 0;
+        const teamRoles = new Set(arts.map((a) => a.role).filter(Boolean));
+        const isTeam = teamRoles.size > 0;
+        const roleBadges = isTeam
+          ? '<span class="role-badges">' +
+              ROLE_ORDER.map((r) =>
+                '<span class="rb' + (teamRoles.has(r) ? '' : ' muted') + '">' + r[0].toUpperCase() + '</span>'
+              ).join('') +
+            '</span>'
+          : (hasArtifact ? '<span class="artifact-dot" title="Has artifact"></span>' : '');
         const holderCount = o.bct_subscriptions ? o.bct_subscriptions.length : 0;
         const synopsisText = o.synopsis ? esc(o.synopsis) : '';
         return (
           '<tr class="row ' + esc(o.status) + '">' +
             '<td class="rank">' + String(i + 1).padStart(2, '0') + '</td>' +
             '<td class="title">' +
-              '<a href="productions.html">' + esc(o.title) + (hasArtifact ? '<span class="artifact-dot" title="Has artifact"></span>' : '') + '</a>' +
+              '<a href="productions.html">' + esc(o.title) + roleBadges + '</a>' +
               (synopsisText ? '<div class="synopsis">' + synopsisText + '</div>' : '') +
             '</td>' +
             '<td class="token">$' + esc(o.token_ticker) + '</td>' +

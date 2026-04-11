@@ -116,6 +116,44 @@
       color: #999; word-break: break-all;
     }
     .card .body .tx a { color: #000; text-decoration: none; border-bottom: 1px solid #000; }
+    .card .body .team {
+      margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid #eee;
+      display: flex; flex-wrap: wrap; gap: 0.3rem;
+    }
+    .card .body .team .role {
+      font-size: 0.5rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 0.25rem 0.5rem;
+      border: 1px solid #000; color: #000; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .card .body .team .role:hover { background: #000; color: #fff; }
+    .card .body .team .role .dot {
+      width: 0.35rem; height: 0.35rem; background: #000; border-radius: 50%;
+    }
+    .card .body .team .role:hover .dot { background: #fff; }
+    .card .body .treatment {
+      margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid #eee;
+      font-size: 0.65rem; color: #444; line-height: 1.55;
+      max-height: 6.5em; overflow: hidden; position: relative;
+    }
+    .card .body .treatment::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 1.5em; background: linear-gradient(transparent, #fff);
+    }
+    .card .body .treatment .label {
+      display: block; font-size: 0.5rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #999; font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .card .body .audio {
+      margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid #eee;
+    }
+    .card .body .audio .label {
+      display: block; font-size: 0.5rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #999; font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .card .body .audio audio { width: 100%; height: 28px; }
     .empty {
       padding: 4rem 0; text-align: center; grid-column: 1 / -1;
       color: #999; font-size: 0.8rem;
@@ -202,7 +240,7 @@
         .select(`
           id, producer_id, producer_address, title, synopsis,
           required_sats, raised_sats, status, token_ticker, created_at,
-          bct_artifacts ( id, kind, url, model, prompt, payment_txid, created_at )
+          bct_artifacts ( id, kind, url, model, prompt, payment_txid, created_at, role )
         `)
         .order('created_at', { ascending: false })
         .limit(200);
@@ -232,6 +270,31 @@
       document.getElementById('s-artifacts').textContent = fmt(artifactCount);
     }
 
+    // Decode the data:text/plain URL the writer agent stores
+    // treatments under so we can render the prose inline.
+    function decodeTreatment(url) {
+      if (!url || !url.startsWith('data:text/plain')) return null;
+      try {
+        const idx = url.indexOf(',');
+        if (idx < 0) return null;
+        return decodeURIComponent(url.slice(idx + 1));
+      } catch {
+        return null;
+      }
+    }
+
+    // Pick the artifact best suited to be the card's hero image.
+    // Priority: storyboard image → any image → any video → null.
+    function pickHero(arts) {
+      const storyboard = arts.find((a) => a.role === 'storyboard' && a.kind === 'image');
+      if (storyboard) return storyboard;
+      const anyImage = arts.find((a) => a.kind === 'image');
+      if (anyImage) return anyImage;
+      const anyVideo = arts.find((a) => a.kind === 'video');
+      if (anyVideo) return anyVideo;
+      return null;
+    }
+
     function renderGrid(offers) {
       const grid = document.getElementById('grid');
       const withArt = offers.filter((o) => o.bct_artifacts && o.bct_artifacts.length);
@@ -242,14 +305,68 @@
         return;
       }
       grid.innerHTML = withArt.map((o) => {
-        const art = (o.bct_artifacts || []).sort((a, b) =>
-          new Date(b.created_at) - new Date(a.created_at))[0];
-        const media = art.kind === 'video'
-          ? '<video muted loop autoplay playsinline src="' + esc(art.url) + '"></video>'
-          : '<img src="' + esc(art.url) + '" alt="' + esc(o.title) + '" />';
+        const arts = (o.bct_artifacts || []).slice().sort((a, b) =>
+          new Date(b.created_at) - new Date(a.created_at));
+        const hero = pickHero(arts);
+        const writer = arts.find((a) => a.role === 'writer' && a.kind === 'text');
+        const composer = arts.find((a) => a.role === 'composer' && a.kind === 'audio');
+
+        // Hero media block. If no image/video at all (e.g. only a writer
+        // treatment landed), show a black "TREATMENT ONLY" placeholder
+        // so the card still renders.
+        let media = '<span>treatment only</span>';
+        if (hero) {
+          media = hero.kind === 'video'
+            ? '<video muted loop autoplay playsinline src="' + esc(hero.url) + '"></video>'
+            : '<img src="' + esc(hero.url) + '" alt="' + esc(o.title) + '" />';
+        }
+
+        const heroModel = hero ? hero.model : (arts[0] ? arts[0].model : '—');
+        const heroTxid = hero ? hero.payment_txid : (arts[0] ? arts[0].payment_txid : null);
+
         const pct = Math.min(100, Math.round(
           (Number(o.raised_sats) / Math.max(1, Number(o.required_sats))) * 100
         ));
+
+        // Team strip — one badge per artifact, ordered writer→director→
+        // storyboard→composer so the reading flow matches the production
+        // pipeline. Single-producer offers (role=null) get no strip.
+        const ROLE_ORDER = ['writer', 'director', 'storyboard', 'composer'];
+        const teamArts = arts
+          .filter((a) => a.role && ROLE_ORDER.includes(a.role))
+          .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
+        const teamStrip = teamArts.length
+          ? '<div class="team">' +
+              teamArts.map((a) =>
+                '<a class="role" href="' + wocTx(a.payment_txid) +
+                '" target="_blank" rel="noopener" title="' + esc(a.model) + ' &middot; ' + esc(shortTx(a.payment_txid)) + '">' +
+                '<span class="dot"></span>' + esc(a.role) +
+                '</a>'
+              ).join('') +
+            '</div>'
+          : '';
+
+        // Writer treatment block — decoded data:text/plain URL.
+        const treatmentText = writer ? decodeTreatment(writer.url) : null;
+        const treatmentBlock = treatmentText
+          ? '<div class="treatment">' +
+              '<span class="label">Writer treatment</span>' +
+              esc(treatmentText) +
+            '</div>'
+          : '';
+
+        // Composer audio — inline player.
+        const audioBlock = composer
+          ? '<div class="audio">' +
+              '<span class="label">Composer score</span>' +
+              '<audio controls preload="none" src="' + esc(composer.url) + '"></audio>' +
+            '</div>'
+          : '';
+
+        const txBlock = heroTxid
+          ? '<div class="tx">Payment: <a href="' + wocTx(heroTxid) + '" target="_blank" rel="noopener">' + esc(shortTx(heroTxid)) + '</a></div>'
+          : '';
+
         return (
           '<article class="card">' +
             '<div class="media">' + media + '</div>' +
@@ -257,7 +374,7 @@
               '<div class="title">' + esc(o.title) + '</div>' +
               '<div class="meta">' +
                 '<div class="k">Token</div><div class="v">$' + esc(o.token_ticker) + '</div>' +
-                '<div class="k">Model</div><div class="v">' + esc(art.model) + '</div>' +
+                '<div class="k">Model</div><div class="v">' + esc(heroModel) + '</div>' +
                 '<div class="k">Producer</div><div class="v">' + esc(shortAddr(o.producer_address)) + '</div>' +
               '</div>' +
               '<div class="progress">' +
@@ -267,7 +384,10 @@
                   '<span class="status">' + esc(o.status) + ' &middot; ' + pct + '%</span>' +
                 '</div>' +
               '</div>' +
-              '<div class="tx">Payment: <a href="' + wocTx(art.payment_txid) + '" target="_blank" rel="noopener">' + esc(shortTx(art.payment_txid)) + '</a></div>' +
+              teamStrip +
+              treatmentBlock +
+              audioBlock +
+              txBlock +
             '</div>' +
           '</article>'
         );
