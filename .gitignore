@@ -16,3 +16,4 @@ electron/main.mjs
 electron/main.mjs.map
 electron/preload.js
 electron/preload.js.map
+.vercel
